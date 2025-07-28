@@ -1,0 +1,102 @@
+# =============================================================================
+# AutoMCP Development Configuration
+# =============================================================================
+# Optimized for development workflow with detailed logging and relaxed validation
+
+$schema: "../schemas/automcp-config-v1.schema.json"
+version: "1.0.0"
+environment: "development"
+
+# Inherit from default and override specific settings
+extends: "default.yaml"
+
+# =============================================================================
+# Development-Specific Overrides
+# =============================================================================
+
+# Enhanced logging for debugging
+logging:
+  level: "DEBUG"
+  format: "structured"
+  log_progress: true
+  profile_performance: true  # Enable profiling in dev
+  
+  file:
+    enabled: true
+    path: "logs/automcp-dev.log"
+    max_size: "50MB"
+    backup_count: 10
+
+# More conservative rate limits for development
+llm:
+  rate_limits:
+    requests_per_minute: 20  # Lower for dev to avoid hitting limits
+    tokens_per_minute: 30000
+    concurrent_requests: 2
+  
+  # Shorter timeouts for faster feedback
+  timeouts:
+    request: 20
+    total: 60
+
+# Smaller batch sizes for easier debugging
+enrichment:
+  batch_size: 2  # Process smaller batches for easier debugging
+  confidence_threshold: 0.6  # More lenient for experimentation
+
+# Relaxed validation for rapid iteration
+validation:
+  strict: false
+  schema_validation: true
+  parameter_validation: false  # Allow incomplete params during dev
+  output_validation: false
+
+output:
+  strict_validation: false
+  pretty_print: true  # Always pretty print in dev
+  include_examples: true
+  include_metadata: true
+  include_debug_info: true  # Extra debug information
+
+# Security relaxed for development
+security:
+  encrypt_outputs: false
+  pii_scrubbing: true  # Still scrub PII in dev
+  api_auth_required: false
+
+# MCP settings optimized for development
+mcp:
+  generate_tools: true
+  generate_examples: true
+  include_schema_validation: false  # Skip for faster iteration
+  
+  tools:
+    max_parameters: 10  # Smaller for easier testing
+    max_nesting_depth: 2
+    include_optional_params: true
+    include_debug_metadata: true
+
+# Development-specific features
+development:
+  hot_reload: true
+  mock_llm_responses: false  # Set to true to use mock responses
+  save_intermediate_results: true
+  verbose_errors: true
+  
+  # Development data paths
+  paths:
+    test_data: "tests/fixtures"
+    output_dir: "dev_outputs"
+    cache_dir: ".dev_cache"
+
+# Parser settings for development
+parsers:
+  workers: 2  # Fewer workers for easier debugging
+  timeout: 60  # Longer timeout for debugging
+  
+  # Enable additional parsing features for development
+  experimental:
+    enabled: true
+    features:
+      - "advanced_schema_inference"
+      - "auto_example_generation"

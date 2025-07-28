@@ -2,7 +2,7 @@
   {
     "name": "SearchDocuments",
     "details": {
-      "summary": "Retrieve a list of documents that match a search query",
+      "summary": "Retrieve search results from an AWS CloudSearch domain",
       "complexity": "simple",
       "user_context": "authenticated_user",
       "domain": "search",
@@ -12,7 +12,7 @@
     "paths": [
       {
         "method": "GET",
-        "endpoint": "/2013-01-01/search"
+        "endpoint": "/2013-01-01/search#format=sdk&pretty=true&q"
       }
     ],
     "requirements": {

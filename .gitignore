@@ -61,4 +61,11 @@ tests/__pycache__/
 tests/outputs/__pycache__/
 
 # Build outputs
-pyproject.toml
+dist/
+build/
+*.egg-info/
+
+# Configuration overrides (keep templates)
+config/local.yaml
+config/custom.yaml
+config/.env.*
