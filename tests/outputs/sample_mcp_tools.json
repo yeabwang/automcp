@@ -1,0 +1,56 @@
+[
+  {
+    "name": "search_products",
+    "description": "Search and filter products in the e-commerce catalog with optional category and limit filters",
+    "method": "GET",
+    "path": "/products",
+    "safety_level": "safe",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "category": {
+          "type": "string",
+          "description": "Filter products by category"
+        },
+        "limit": {
+          "type": "integer",
+          "description": "Maximum number of products to return"
+        },
+        "offset": {
+          "type": "integer",
+          "description": "Number of products to skip"
+        }
+      },
+      "required": []
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "products": {
+          "type": "array",
+          "description": "List of products"
+        },
+        "total": {
+          "type": "integer",
+          "description": "Total number of products"
+        }
+      },
+      "required": [
+        "products",
+        "total"
+      ]
+    },
+    "headers": {
+      "Content-Type": "application/json",
+      "X-API-Key": "{api_token}"
+    },
+    "metadata": {
+      "complexity": "simple",
+      "user_context": "browsing_user",
+      "domain": "ecommerce",
+      "confidence": 0.92,
+      "generated_at": 1642680610.0,
+      "client_type": "generic"
+    }
+  }
+]

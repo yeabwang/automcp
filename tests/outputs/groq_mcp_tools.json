@@ -1,0 +1,86 @@
+[
+  {
+    "name": "CloudSearch Documents",
+    "description": "Retrieves a list of documents that match the specified search criteria using one of four query parsers: simple, structured, lucene, or dismax.",
+    "method": "GET",
+    "path": "/2013-01-01/search#format=sdk&pretty=true&q",
+    "safety_level": "safe",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "q": {
+          "type": "string",
+          "description": "Search query string"
+        }
+      },
+      "required": [
+        "q"
+      ]
+    },
+    "metadata": {
+      "complexity": "moderate",
+      "confidence": 0.95
+    }
+  },
+  {
+    "name": "Get Autocomplete Suggestions",
+    "description": "Retrieves autocomplete suggestions for a partial query string based on the contents of a particular text field in Amazon CloudSearch.",
+    "method": "GET",
+    "path": "/2013-01-01/suggest#format=sdk&pretty=true&q&suggester",
+    "safety_level": "safe",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "q": {
+          "type": "string",
+          "description": "Partial query string"
+        }
+      },
+      "required": [
+        "q"
+      ]
+    },
+    "metadata": {
+      "complexity": "simple",
+      "confidence": 0.95
+    }
+  },
+  {
+    "name": "Upload Documents to CloudSearch",
+    "description": "Posts a batch of documents to a search domain for indexing, allowing you to add, update, or delete documents from your domain.",
+    "method": "POST",
+    "path": "/2013-01-01/documents/batch#format=sdk&Content-Type",
+    "safety_level": "safe",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "documents": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "fields": {
+                "type": "object",
+                "properties": {}
+              }
+            },
+            "required": [
+              "id",
+              "fields"
+            ]
+          }
+        }
+      },
+      "required": [
+        "documents"
+      ]
+    },
+    "metadata": {
+      "complexity": "moderate",
+      "confidence": 0.95
+    }
+  }
+]

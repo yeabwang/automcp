@@ -1,0 +1,12 @@
+
+
+{
+  "white": [
+    "SearchDocuments",
+    "GetSuggestions"
+  ],
+  "grey": [
+    "UploadDocuments"
+  ],
+  "black": []
+}

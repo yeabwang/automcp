@@ -1,0 +1,66 @@
+[
+  {
+    "name": "get_autocomplete_suggestions",
+    "details": {
+      "summary": "Provides users with relevant search suggestions as they type, enhancing their search experience and improving discovery of relevant content.",
+      "complexity": "simple",
+      "user_context": "end_user",
+      "domain": "suggestions",
+      "business_context": "Enabling users to quickly find relevant content, reducing search friction, and increasing engagement with the application or service.",
+      "technical_requirements": "Requires authentication, adheres to rate limits, and expects query parameters in a specific format (e.g., q, suggester, size)."
+    },
+    "confidence": 0.85,
+    "paths": [
+      {
+        "method": "GET",
+        "endpoint": "/2013-01-01/suggest#format=sdk&pretty=true&q&suggester"
+      }
+    ],
+    "requirements": {
+      "authentication": [],
+      "permissions": [
+        {
+          "level": "white",
+          "action": "get_autocomplete_suggestions"
+        }
+      ],
+      "rate_limits": {
+        "requests_per_minute": 100,
+        "burst_limit": 10
+      },
+      "data_format": "json"
+    }
+  },
+  {
+    "name": "index_bulk_documents",
+    "details": {
+      "summary": "Upload a batch of documents to make them searchable in your domain, enabling fast and accurate search results for your users.",
+      "complexity": "moderate",
+      "user_context": "developer",
+      "domain": "indexing",
+      "business_context": "To provide a robust search functionality in their application, developers need to index large volumes of data efficiently. This operation enables them to upload batches of documents, ensuring that their search domain is up-to-date and providing accurate results to their users.",
+      "technical_requirements": "Requires authentication, adheres to 5MB batch size limit, and supports JSON or XML data formats."
+    },
+    "confidence": 0.85,
+    "paths": [
+      {
+        "method": "POST",
+        "endpoint": "/2013-01-01/documents/batch#format=sdk&Content-Type"
+      }
+    ],
+    "requirements": {
+      "authentication": [],
+      "permissions": [
+        {
+          "level": "grey",
+          "action": "index_bulk_documents"
+        }
+      ],
+      "rate_limits": {
+        "requests_per_minute": 100,
+        "burst_limit": 10
+      },
+      "data_format": "json"
+    }
+  }
+]

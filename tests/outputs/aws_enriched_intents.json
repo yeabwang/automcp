@@ -1,0 +1,95 @@
+[
+  {
+    "name": "SearchDocuments",
+    "details": {
+      "summary": "Retrieve documents from a CloudSearch domain that match a search query",
+      "complexity": "simple",
+      "user_context": "developer",
+      "domain": "aws_cloudsearch",
+      "business_context": "Search for specific documents in a collection of indexed documents"
+    },
+    "confidence": 0.95,
+    "paths": [
+      {
+        "method": "GET",
+        "endpoint": "/2013-01-01/search"
+      }
+    ],
+    "requirements": {
+      "authentication": [
+        {
+          "type": "aws_signature_v4",
+          "required": true
+        }
+      ],
+      "permissions": [
+        {
+          "level": "white",
+          "action": "SearchDocuments"
+        }
+      ]
+    }
+  },
+  {
+    "name": "GetSuggestions",
+    "details": {
+      "summary": "Retrieve autocomplete suggestions based on partial query strings",
+      "complexity": "simple",
+      "user_context": "developer",
+      "domain": "aws_cloudsearch",
+      "business_context": "Part of the document search workflow, providing users with relevant suggestions as they type"
+    },
+    "confidence": 0.95,
+    "paths": [
+      {
+        "method": "GET",
+        "endpoint": "/2013-01-01/suggest"
+      }
+    ],
+    "requirements": {
+      "authentication": [
+        {
+          "type": "aws_signature_v4",
+          "required": true
+        }
+      ],
+      "permissions": [
+        {
+          "level": "white",
+          "action": "GetSuggestions"
+        }
+      ]
+    }
+  },
+  {
+    "name": "UploadDocuments",
+    "details": {
+      "summary": "Upload a batch of documents to the search domain for indexing",
+      "complexity": "moderate",
+      "user_context": "developer",
+      "domain": "aws_cloudsearch",
+      "business_context": "Indexing new or updated documents to make them searchable"
+    },
+    "confidence": 0.95,
+    "paths": [
+      {
+        "method": "POST",
+        "endpoint": "/2013-01-01/documents/batch"
+      }
+    ],
+    "requirements": {
+      "authentication": [
+        {
+          "type": "aws_signature_v4",
+          "required": true
+        }
+      ],
+      "permissions": [
+        {
+          "level": "grey",
+          "action": "UploadDocuments"
+        }
+      ]
+    }
+  }
+]

@@ -1,0 +1,9 @@
+{
+  "white": [
+    "GetAutocompleteSuggestions"
+  ],
+  "grey": [
+    "index_documents_in_cloudsearch"
+  ],
+  "black": []
+}

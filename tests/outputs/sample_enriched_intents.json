@@ -1,0 +1,94 @@
+[
+  {
+    "name": "search_products",
+    "details": {
+      "summary": "User wants to search and filter products in catalog",
+      "complexity": "simple",
+      "user_context": "browsing_user",
+      "domain": "ecommerce",
+      "business_context": "Basic operation"
+    },
+    "paths": [
+      {
+        "method": "GET",
+        "endpoint": "/products"
+      }
+    ],
+    "requirements": {
+      "authentication": [
+        {
+          "type": "api_key",
+          "required": true
+        }
+      ],
+      "permissions": [
+        {
+          "level": "white",
+          "action": "search_products"
+        }
+      ],
+      "access_control": {
+        "authentication_required": true,
+        "authorization_level": "white",
+        "rate_limiting": {
+          "requests_per_minute": 100,
+          "burst": 20
+        }
+      }
+    },
+    "confidence": 0.92,
+    "enriched_by": "semantic_llm",
+    "metadata": {
+      "processing_time": 1642680600.0,
+      "llm_calls": 5,
+      "risk_level": "low",
+      "mcp_client_type": "generic"
+    }
+  },
+  {
+    "name": "get_product_details",
+    "details": {
+      "summary": "User wants to retrieve detailed information about a specific product",
+      "complexity": "simple",
+      "user_context": "browsing_user",
+      "domain": "ecommerce",
+      "business_context": "Product information retrieval"
+    },
+    "paths": [
+      {
+        "method": "GET",
+        "endpoint": "/products/{id}"
+      }
+    ],
+    "requirements": {
+      "authentication": [
+        {
+          "type": "api_key",
+          "required": true
+        }
+      ],
+      "permissions": [
+        {
+          "level": "white",
+          "action": "get_product_details"
+        }
+      ],
+      "access_control": {
+        "authentication_required": true,
+        "authorization_level": "white",
+        "rate_limiting": {
+          "requests_per_minute": 200,
+          "burst": 50
+        }
+      }
+    },
+    "confidence": 0.95,
+    "enriched_by": "semantic_llm",
+    "metadata": {
+      "processing_time": 1642680605.0,
+      "llm_calls": 3,
+      "risk_level": "low",
+      "mcp_client_type": "generic"
+    }
+  }
+]

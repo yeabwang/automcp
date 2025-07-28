@@ -1,0 +1,752 @@
+# Spec Analyzer-Powered MCP Tool Generation Framework Configuration
+# This configuration controls parsing, enrichment, output generation, logging, validation, 
+# LLM client settings, timeouts, and MCP-specific features.
+# Best Practices:
+# - Use environment variables for sensitive keys (e.g., LLM_API_KEY, SECURITY_KEY).
+# - Defaults are development-friendly; adjust for production (e.g., strict_validation, encrypt_outputs).
+# - All domain-specific logic is externalized to configuration (e.g., domain_patterns) to ensure flexibility.
+# =============================================================================
+# Schema Reference Configuration
+# =============================================================================
+$schema: "configs/spec-analyzer-config-v1.schema.json"
+version: "1.0.0"
+
+# =============================================================================
+# Profile Configuration
+# =============================================================================
+# Purpose: Switch settings for development, production, or enterprise environments.
+profile: "development"  # Options: development, production, enterprise
+
+profiles:
+  development:
+    enrichment.batch_size: 4
+    logging.level: debug
+    validation.strict: false
+    output.strict_validation: false
+    mcp.generate_tools: true
+    mcp.generate_examples: true
+    exporter.api_auth: false
+    security.encrypt_outputs: false
+  production:
+    enrichment.batch_size: 16
+    logging.level: info
+    validation.strict: true
+    output.strict_validation: true
+    mcp.generate_tools: true
+    mcp.generate_examples: true
+    exporter.api_auth: true
+    security.encrypt_outputs: true
+  enterprise:
+    enrichment.batch_size: 32
+    logging.level: warning
+    validation.strict: true
+    output.strict_validation: true
+    mcp.generate_tools: true
+    mcp.generate_examples: true
+    exporter.api_auth: true
+    security.encrypt_outputs: true
+    use_memory: true  # Enable vector stores for scalability
+
+# =============================================================================
+# Parser Configuration
+# =============================================================================
+# Purpose: Define parsing strategy for OpenAPI, REST, Postman, and scraping.
+# Features: Supports multiple parsers, recursion limits, and concurrent workers.
+parsers_order:
+  - openapi
+  - rest
+  - postman
+  - scraping
+
+flatten_depth:
+  openapi: 5
+  rest: 3
+  postman: 3
+  scraping: 5
+  default: 5
+
+parser_workers: 8  # Concurrent workers for parsing endpoints
+spec_file_priorities:
+  - openapi.yaml
+  - openapi.json
+  - swagger.yaml
+  - swagger.json
+  - postman.json
+
+# =============================================================================
+# General Flags Configuration
+# =============================================================================
+# Purpose: Control high-level behaviors like logging and profiling.
+log_progress: true  # Log parsing/enrichment progress for debugging
+profile_enrichment: false  # Disable cProfile in production for performance
+
+# =============================================================================
+# Semantic Transformation Configuration
+# =============================================================================
+# Purpose: Configure LLM-driven semantic enhancement for domain-aligned outputs.
+# Features: LLM prompts generate domain-appropriate names, descriptions, and examples based on input spec's domain (e.g., e-commerce, healthcare).
+semantic_transformation:
+  enabled: true
+  mode: "llm_driven"  # Options: llm_driven, pattern_based
+  confidence_threshold: 0.7
+
+  # FIX: Added required_intent_details for consistency in prompts and validation (used in enricher.py and output_generator.py)
+  required_intent_details: ["summary", "complexity", "user_context"]
+
+  # Domain patterns to guide LLM in generating domain-appropriate outputs (configurable per deployment)
+  domain_patterns:
+    e_commerce: ["product", "order", "cart", "payment", "checkout", "inventory"]
+    user_management: ["user", "profile", "account", "auth", "login", "session"]
+    content_management: ["content", "article", "post", "media", "publish"]
+    communication: ["message", "email", "notification", "chat", "sms"]
+    analytics: ["analytics", "metric", "report", "dashboard", "track"]
+    finance: ["payment", "invoice", "transaction", "balance", "account"]
+    healthcare: ["patient", "appointment", "prescription", "diagnosis"]
+    logistics: ["shipment", "tracking", "delivery", "route", "warehouse"]
+    education: ["course", "lesson", "enrollment", "grade", "student"]
+    # Define your domain pattern terminollogies like this
+
+  # Configurable complexity levels
+  complexity_levels:
+    - name: "simple"
+      description: "Basic CRUD operations with minimal parameters"
+      max_parameters: 3
+      max_nesting_depth: 1
+    - name: "moderate"
+      description: "Standard operations with some business logic"
+      max_parameters: 7
+      max_nesting_depth: 3
+    - name: "complex"
+      description: "Advanced operations with significant logic"
+      max_parameters: 15
+      max_nesting_depth: 5
+    - name: "multi_step"
+      description: "Operations requiring multiple API calls or workflows"
+      max_parameters: 999
+      max_nesting_depth: 999
+
+  # Configurable user contexts
+  user_contexts:
+    - name: "anonymous_visitor"
+      description: "Unauthenticated users accessing public endpoints"
+      auth_required: false
+      typical_operations: ["read", "search", "list"]
+    - name: "browsing_user"
+      description: "Users exploring public data without commitment"
+      auth_required: false
+      typical_operations: ["read", "search", "filter"]
+    - name: "authenticated_user"
+      description: "Logged-in users with standard privileges"
+      auth_required: true
+      typical_operations: ["read", "create", "update"]
+    - name: "premium_user"
+      description: "Users with enhanced privileges"
+      auth_required: true
+      typical_operations: ["read", "create", "update", "bulk"]
+    - name: "admin_user"
+      description: "Administrative users with elevated privileges"
+      auth_required: true
+      typical_operations: ["all"]
+    - name: "system_service"
+      description: "API-to-API automated interactions"
+      auth_required: true
+      typical_operations: ["all"]
+
+  # Permission level mappings
+  permission_levels:
+    white:
+      description: "Safe read-only operations"
+      risk_level: "low"
+      typical_methods: ["GET", "HEAD", "OPTIONS"]
+      requires_auth: false
+    grey:
+      description: "User-specific write operations"
+      risk_level: "medium"
+      typical_methods: ["POST", "PUT", "PATCH"]
+      requires_auth: true
+    black:
+      description: "Administrative or destructive operations"
+      risk_level: "high"
+      typical_methods: ["DELETE", "POST", "PUT"]
+      requires_auth: true
+      additional_checks: ["audit_logging", "rate_limiting"]
+
+  # Authentication type mappings
+  auth_type_mappings:
+    apiKey: "api_key"
+    http: "http_auth"
+    oauth2: "oauth"
+    openIdConnect: "openid_connect"
+    basic: "basic_auth"
+    bearer: "bearer_token"
+    digest: "digest_auth"
+    custom: "custom_auth"
+
+  # Sensitive data patterns for PII detection
+  # FIX: Expanded patterns for better security coverage (e.g., added IP, API keys)
+  sensitive_data_patterns:
+    high_sensitivity:
+      - "password"
+      - "secret"
+      - "key"
+      - "token"
+      - "credit_card"
+      - "ssn"
+      - "tax_id"
+      - "medical_record"
+      - "api_key"  # FIX: Added for common sensitive data
+      - "access_token"
+    medium_sensitivity:
+      - "email"
+      - "phone_number"
+      - "address"
+      - "profile"
+      - "personal_id"
+      - "ip_address"  # FIX: Added for network-related PII
+    low_sensitivity:
+      - "name"
+      - "username"
+      - "id"
+      - "public_data"
+
+  # LLM prompts for domain-aligned outputs
+  # FIX: Added max_prompt_length to prevent token overflow (checked in async_llm_client.py)
+  max_prompt_length: 8000  # Global limit for prompt truncation
+
+  llm_prompts:
+    semantic_naming: |
+      You are an expert API semantic analyzer. Transform this technical OpenAPI endpoint into a semantic function name that aligns with the input API's domain.
+
+      Input:
+      - HTTP Method: {method}
+      - Path: {path}
+      - Summary: {summary}
+      - Parameters: {parameters}
+      - Domain Context: {domain_context}  # e.g., e_commerce, healthcare
+
+      Guidelines:
+      - Use action-oriented naming (e.g., search_products for e-commerce, retrieve_patient_records for healthcare).
+      - Follow REST conventions (GET=search/list, POST=create, PUT=update, DELETE=remove).
+      - Use domain-specific terms from {domain_context} to ensure relevance (e.g., "product" for e-commerce, "patient" for healthcare).
+      - Use snake_case format.
+      - Be specific but concise.
+
+      Return only the semantic name as a single string, no explanation.
+    
+    complexity_analysis: |
+      Analyze the complexity of this API endpoint based on its structure.
+
+      Input:
+      - Parameters: {parameters}
+      - Request Body: {request_body}
+      - Response Schema: {response_schema}
+      - Semantic Name: {semantic_name}
+
+      Complexity Factors:
+      - Parameter count and nesting depth
+      - Request body complexity
+      - Response schema complexity
+      - Business logic implied by semantic name
+      - Inter-dependency requirements
+
+      Complexity Levels:
+      - simple: Basic CRUD, few parameters, straightforward response
+      - moderate: Some business logic, moderate parameters, structured response
+      - complex: Multiple parameters, nested objects, complex business rules
+      - multi_step: Requires multiple API callsor complex orchestration
+
+      Return only one word: simple, moderate, complex, or multi_step
+    
+    user_context_inference: |
+      Infer the most likely user context for this API endpoint based on its semantic purpose.
+
+      Input:
+      - Semantic Name: {semantic_name}
+      - HTTP Method: {method}
+      - Path: {path}
+      - Authentication Required: {auth_required}
+      - Domain Context: {domain_context}
+
+      User Context Options:
+      - anonymous_visitor: Public endpoints, no auth
+      - browsing_user: Public data browsing or searching
+      - authenticated_user: User-specific operations
+      - premium_user: Advanced or premium features
+      - admin_user: Administrative functions
+      - system_service: API-to-API or automated processes
+
+      Consider:
+      - Semantic action and domain context
+      - Authentication requirements
+      - Data sensitivity
+      - Typical usage patterns
+
+      Return only one user context.
+    
+    permission_inference: |
+      Determine the appropriate permission level for this API endpoint.
+
+      Input:
+      - Semantic Name: {semantic_name}
+      - HTTP Method: {method}
+      - User Context: {user_context}
+      - Data Sensitivity: {data_sensitivity}
+      - Domain Context: {domain_context}
+
+      Permission Levels:
+      - white: Safe read operations, public data
+      - grey: Authenticated user operations, moderate risk
+      - black: Admin or high-risk operations, sensitive data
+
+      Classification Rules:
+      - GET with public data → white
+      - User data operations → grey
+      - Admin, destructive, or financial operations → black
+
+      Return only: white, grey, or black
+    
+    auth_requirement_inference: |
+      Infer authentication requirements for this endpoint.
+
+      Input:
+      - Semantic Name: {semantic_name}
+      - HTTP Method: {method}
+      - Path: {path}
+      - User Context: {user_context}
+      - Permission Level: {permission_level}
+      - Domain Context: {domain_context}
+
+      Consider:
+      - Public vs private data access
+      - User-specific operations
+      - Security sensitivity
+      - Industry standards
+
+      Return JSON:
+      {
+        "type": "api_key|oauth|basic_auth|none",
+        "required": true|false,
+        "scope": "optional_scope_for_oauth"
+      }
+    
+    tool_description_generation: |
+      Generate a comprehensive description for this MCP tool, aligned with the input API's domain.
+
+      Input:
+      - Semantic Name: {semantic_name}
+      - Summary: {summary}
+      - Parameters: {parameters}
+      - User Context: {user_context}
+      - Complexity: {complexity}
+      - Domain Context: {domain_context}
+
+      Requirements:
+      - Describe the tool’s purpose and key capabilities.
+      - Use domain-specific terms from {domain_context} (e.g., "products" for e-commerce, "patients" for healthcare).
+      - Be concise (1-2 sentences).
+      - Use professional, technical language.
+
+      Return only the description text.
+    
+    prompt_template_generation: |
+      Create a natural language prompt template for this API tool, aligned with the input API's domain.
+
+      Input:
+      - Semantic Name: {semantic_name}
+      - Description: {description}
+      - Parameters: {parameters}
+      - Examples: {examples}
+      - Domain Context: {domain_context}
+
+      Requirements:
+      - Use {param_name} placeholders.
+      - Be conversational and suitable for AI agents.
+      - Include key parameters.
+      - Use domain-specific terms from {domain_context}.
+
+      Return only the template string.
+    
+    usage_examples_generation: |
+      Generate realistic usage examples for this API tool, aligned with the input API's domain.
+
+      Input:
+      - Semantic Name: {semantic_name}
+      - Description: {description}
+      - Input Schema: {input_schema}
+      - Domain Context: {domain_context}
+
+      Requirements:
+      - Generate 2-3 diverse, realistic examples.
+      - Use function call format: function_name(param=value, ...).
+      - Include realistic, domain-appropriate parameter values.
+      - Show varied use cases.
+
+      Return as JSON array of strings.
+
+  quality_thresholds:
+    min_confidence: 0.6
+    semantic_name_min_length: 3
+    semantic_name_max_length: 50
+    description_min_length: 20
+    description_max_length: 200
+    summary_min_length: 10
+    summary_max_length: 200
+    example_min_length: 5
+    example_max_count: 5
+    # FIX: Added capability_name_min_length and max for consistency with output_generator.py capabilities.txt validation
+    capability_name_min_length: 3
+    capability_name_max_length: 50
+
+  fallback_strategies:
+    semantic_naming: "pattern_based"  # Use path/method patterns
+    complexity: "parameter_count"
+    user_context: "authenticated_user"
+    permission: "grey"
+
+  # Caching configuration
+  caching:
+    enabled: true
+    ttl_hours: 24
+    cache_by_signature: true
+    max_cache_size: 10000
+
+# =============================================================================
+# EnrichmentConfiguration
+# =============================================================================
+# Purpose: Configure LLM-based enrichment with multi-stage processing.
+enrichment:
+  batch_size: 8
+  max_batch_size: 20
+  cpu_threshold: 70
+  mem_threshold: 80
+  use_memory: false  # Enable FAISS/mem0 for production
+  confidence_thresholds:
+    auto_accept: 0.85
+    clarify: 0.30
+  retry_attempts: 3
+  timeout_seconds: 30
+  retry_wait_seconds: 1
+  adapt_throttle_seconds: 10
+  resource_sample_interval: 0.1
+  batch_growth_factor: 2
+  fallback_confidence: 0.5
+  fallbacks:
+    action: "perform_operation"
+    object: "resource"
+    summary: "User wants to perform an operation"
+    classification: "grey"
+  
+  # Multi-stage processing pipeline
+  processing_stages:
+    - technical_extraction
+    - semantic_transformation
+    - context_inference
+    - security_analysis
+    - mcp_generation
+    - validation
+  
+  # Stage-specific settings
+  stage_settings:
+    semantic_transformation:
+      batch_size: 5
+      timeout_seconds: 45
+      retry_attempts: 3
+    context_inference:
+      batch_size: 8
+      timeout_seconds: 30
+      parallel_processing: true
+    mcp_generation:
+      batch_size: 3
+      timeout_seconds: 60
+      include_validation: true
+
+# =============================================================================
+# Output Configuration
+# =============================================================================
+# Purpose: Configure file output generation (intents.json, capabilities.txt, mcp_tools.json).
+output:
+  output_dir: outputs/
+  save_format: json # Options: json, yaml
+  versioning: false
+  strict_validation: true
+  editable: true
+  quality_assessment:
+    enabled: true
+    generate_report: true
+    min_acceptable_score: 70
+    grading_thresholds:
+      A: 90
+      B: 80
+      C: 70
+      D: 60
+      F: 0
+    use_llm_assessment: true  # Use LLM for quality assessment
+    max_issues_threshold: 5  # Threshold for high issues warning
+    # FIX: Added sampling_rate for quality assessment to optimize for large datasets (used in output_generator.py)
+    sampling_rate: 1.0  # 1.0 = assess all; 0.5 = assess 50% (for performance)
+
+# =============================================================================
+# Logging Configuration
+# =============================================================================
+# Purpose: Configure structured logging with PII redaction.
+logging:
+  level: info # Options: debug, info, warning, error
+  format: "console" # Options: console, json, keyvalue
+  redact_keys:
+    - auth_token
+    - api_key
+    - credentials
+    - password
+    - secret
+    - token
+    - phone_number
+    - email
+    - ssn
+    - credit_card
+
+# =============================================================================
+# Validation Configuration
+# =============================================================================
+# Purpose: Enforce schema and semantic validation.
+validation:
+  strict: true
+  semantic_name_pattern: '^[a-z][a-z0-9_]*[a-z0-9]$'
+  semantic_name_reserved_words: ["class", "def", "return", "import", "from"]
+  valid_http_methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]
+  max_schema_depth: 10
+  max_array_items: 1000
+  valid_content_types:
+    - "application/json"
+    - "application/xml"
+    - "application/x-www-form-urlencoded"
+    - "multipart/form-data"
+    - "text/plain"
+    - "text/html"
+
+# =============================================================================
+# LLM Client Configuration
+# =============================================================================
+# Purpose: Configure LLM providers for enrichment tasks.
+llm_client:
+  provider: "groq" # Options: groq, openai, anthropic, claude
+  endpoint: "" # Auto-selected based on provider
+  api_key: ""  # Use LLM_API_KEY env var
+  model: "grok-beta" # Default model
+  timeout: 60
+  # FIX: Added explicit check for required fields in code (ConfigModel), but provide defaults or warnings here
+  # Note: Set api_key via env var; if empty, code will warn and limit features
+
+# Provider endpoints
+  endpoints:
+    groq: "https://api.groq.com/openai/v1/chat/completions"
+    openai: "https://api.openai.com/v1/chat/completions"
+    anthropic: "https://api.anthropic.com/v1/messages"
+    claude: "https://api.anthropic.com/v1/messages"
+
+ # Provider-specific settings
+  provider_settings:
+    groq:
+      max_tokens: 4096
+      temperature: 0.1
+      supports_json_mode: true
+      batch_size_limit: 20
+      rate_limit_requests_per_minute: 6000
+      optimal_batch_size: 8
+      max_prompt_length: 8000
+      retry_wait_min: 2
+      retry_wait_max: 8
+      retry_multiplier: 1
+    openai:
+      max_tokens: 4096
+      temperature: 0.1
+      supports_json_mode: true
+      batch_size_limit: 100
+      rate_limit_requests_per_minute: 3000
+      optimal_batch_size: 10
+      max_prompt_length: 8000
+      retry_wait_min: 3
+      retry_wait_max: 12
+      retry_multiplier: 1
+    anthropic:
+      max_tokens: 4096
+      temperature: 0.1
+      supports_json_mode: false
+      batch_size_limit: 50
+      rate_limit_requests_per_minute: 1000
+      optimal_batch_size: 5
+      max_prompt_length: 8000
+      retry_wait_min: 4
+      retry_wait_max: 16
+      retry_multiplier: 1.5
+      anthropic_version: "2023-06-01"
+    claude:
+      max_tokens: 4096
+      temperature: 0.1
+      supports_json_mode: false
+      batch_size_limit: 50
+      rate_limit_requests_per_minute: 1000
+      optimal_batch_size: 5
+      max_prompt_length: 8000
+      retry_wait_min: 4
+      retry_wait_max: 16
+      retry_multiplier: 1.5
+      anthropic_version: "2023-06-01"
+  health_check:
+    enabled: true
+    prompt: "Respond with 'OK'"
+    interval_seconds: 300
+    timeout_seconds: 10
+
+# =============================================================================
+# Timeouts Configuration
+# =============================================================================
+# Purpose: Set timeouts for various operations.
+timeouts:
+  request: 30
+  subprocess: 60
+  llm_query: 60
+  session_max_age: 3600
+
+# =============================================================================
+# MCP Configuration
+# =============================================================================
+# Purpose: Configure MCP tool generation for AI agent(MCP agent) consumption.
+# Please refer to our terminology defination if you are not familier with MCP Agent
+mcp:
+  client_type: "langchain" # Options: langchain, fastmcp, openai, llamaindex, autogen, generic(not client specific)
+  generate_tools: true
+  include_schemas: true
+  generate_prompts: true
+  generate_examples: true
+  
+# Safety level mappings
+  safety_mapping:
+    white: "safe"
+    grey: "caution"
+    black: "restricted"
+    admin_only: "admin_required"
+  
+  tool_template: "json"  # Options: json, yaml
+  
+# Enhanced tool generation
+  tool_generation:
+    include_advanced_schemas: true
+    generate_error_responses: true
+    include_rate_limits: true
+    generate_sdk_examples: true
+
+# Schema generation settings 
+  input_schema_generation:
+    include_descriptions: true
+    include_examples: true
+    include_constraints: true
+    infer_additional_fields: true 
+  output_schema_generation:
+    include_success_responses: true
+    include_error_responses: true
+    include_metadata_fields: true
+    enhance_with_domain_knowledge: true
+
+# Headers generation  
+  headers_generation:
+    auto_detect_auth_headers: true
+    include_content_type: true
+    include_user_agent: false
+    include_rate_limit_headers: true
+    default_content_type: "application/json"
+
+# =============================================================================
+# Exporter Configuration
+# =============================================================================
+# Purpose: Configure metadata export methods.
+exporter:
+  types:
+    - file
+    - api
+    - memory
+  api_port: 8000
+  api_auth: true
+  memory_store: "faiss"  # Options: faiss, pinecone
+
+# =============================================================================
+# Security Configuration
+# =============================================================================
+# Purpose: Harden system with encryption, PII scrubbing, and rate limiting.
+security:
+  encrypt_outputs: false  # Enable with SECURITY_KEY for production
+  api_key_header: "X-API-Key" # using env is recommended
+  rate_limit_by_key: true
+  input_sanitization: true
+  output_encoding: true
+  max_file_size: "50MB"
+  allowed_file_types:
+    - ".json"
+    - ".yaml"
+    - ".yml"
+    - ".py"
+  auth_header_patterns:
+    api_key:
+      - "X-API-Key"
+      - "X-Api-Key"
+      - "x-api-key"
+      - "API-Key"
+      - "apikey"
+    bearer:
+      - "Authorization"
+      - "authorization"
+    custom:
+      - "X-Custom-Auth"
+      - "X-Service-Token"
+
+# =============================================================================
+# Error Handling Configuration
+# =============================================================================
+# Purpose: Ensure resilience with retries and circuit breakers.
+error_handling:
+  max_retries: 3
+  backoff_strategy: "exponential" # Options: linear, exponential, fixed
+  circuit_breaker:
+    failure_threshold: 5
+    recovery_timeout: 60
+  dead_letter_queue: true
+  retry_on_status_codes: [429, 502, 503, 504]
+  retry_on_exceptions:
+    - "RequestException"
+    - "ClientError"
+    - "TimeoutError"
+    - "ConnectionError"
+
+# =============================================================================
+# Monitoring Configuration
+# =============================================================================
+# Purpose: Enable observability with metrics and health checks.
+monitoring:
+  metrics_enabled: true
+  health_check_port: 8080
+  prometheus_endpoint: "/metrics"
+  log_sampling_rate: 0.1
+  slow_query_threshold: 5
+  tracked_metrics:
+    - "requests_total"
+    - "requests_duration_seconds"
+    - "llm_calls_total"
+    - "llm_tokens_used"
+    - "errors_total"
+    - "cache_hits_total"
+    - "quality_scores"
+
+# =============================================================================
+# Telemetry Configuration
+# =============================================================================
+# Purpose: Support distributed tracing and metrics.
+telemetry:
+  tracing_enabled: false
+  metrics_enabled: false
+  otel_endpoint: "http://jaeger:14268"
+  service_name: "spec-analyzer-mcp"
+  span_attributes:
+    - "semantic_name"
+    - "complexity"
+    - "user_context"
+    - "permission_level"
+    - "confidence_score"

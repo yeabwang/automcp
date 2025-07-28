@@ -1,0 +1,54 @@
+[
+  {
+    "name": "GetAutocompleteSuggestions",
+    "details": {
+      "summary": "Retrieve autocomplete suggestions for a partial query string",
+      "complexity": "simple",
+      "user_context": "browsing_user",
+      "domain": "search",
+      "business_context": "Enhance search functionality with autocomplete suggestions"
+    },
+    "confidence": 0.95,
+    "paths": [
+      {
+        "method": "GET",
+        "endpoint": "/2013-01-01/suggest#format=sdk&pretty=true&q&suggester"
+      }
+    ],
+    "requirements": {
+      "authentication": [],
+      "permissions": [
+        {
+          "level": "white",
+          "action": "GetAutocompleteSuggestions"
+        }
+      ]
+    }
+  },
+  {
+    "name": "index_documents_in_cloudsearch",
+    "details": {
+      "summary": "Upload a batch of documents to a search domain for indexing",
+      "complexity": "moderate",
+      "user_context": "authenticated_user",
+      "domain": "cloud_search",
+      "business_context": "Indexing documents in a search domain to enable search functionality"
+    },
+    "confidence": 0.95,
+    "paths": [
+      {
+        "method": "POST",
+        "endpoint": "/2013-01-01/documents/batch#format=sdk&Content-Type"
+      }
+    ],
+    "requirements": {
+      "authentication": [],
+      "permissions": [
+        {
+          "level": "grey",
+          "action": "index_documents_in_cloudsearch"
+        }
+      ]
+    }
+  }
+]

@@ -1,0 +1,25 @@
+{
+  "white": {
+    "operations": [
+      "SearchDocuments",
+      "SearchSuggestionsIntent"
+    ],
+    "description": "Safe read-only operations"
+  },
+  "grey": {
+    "operations": [
+      "UploadDocumentsIntent"
+    ],
+    "description": "Moderate write operations"
+  },
+  "black": {
+    "operations": [],
+    "description": "Dangerous operations"
+  },
+  "metadata": {
+    "total_intents": 3,
+    "total_tools": 3,
+    "aws_service": "cloudsearch",
+    "processing_timestamp": 1753683861.784206
+  }
+}
