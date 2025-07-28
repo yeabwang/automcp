@@ -1,268 +1,95 @@
-# =============================================================================
-# AutoMCP Enterprise Configuration
-# =============================================================================
-# Optimized for enterprise deployment with advanced features, compliance, and scale
-
-$schema: "../schemas/automcp-config-v1.schema.json"
-version: "1.0.0"
-environment: "enterprise"
-
-# Inherit from production and add enterprise features
-extends: "production.yaml"
-
-# =============================================================================
-# Enterprise-Specific Overrides
-# =============================================================================
-
-# Enterprise-grade logging with compliance features
-logging:
-  level: "INFO"
-  format: "json"
-  log_progress: false
-  profile_performance: false
-  
-  file:
-    enabled: true
-    path: "/var/log/automcp/automcp.log"
-    max_size: "500MB"
-    backup_count: 100
-    rotation: "hourly"
-    compression: true
-  
-  # Audit logging for compliance
-  audit:
-    enabled: true
-    path: "/var/log/automcp/audit.log"
-    include_requests: true
-    include_responses: false  # Exclude for privacy
-    retention_days: 2555  # 7 years for compliance
-
-# Enterprise LLM configuration with multiple providers
-llm:
-  # Multi-provider support for redundancy
-  providers:
-    primary: "groq"
-    fallback: ["openai", "anthropic"]
-  
-  models:
-    groq: "llama-3.1-70b-versatile"
-    openai: "gpt-4"
-    anthropic: "claude-3-sonnet"
-  
-  # Enterprise rate limits
+environment: enterprise
+llm_client:
+  provider: groq
+  endpoint: https://api.groq.com/openai/v1/chat/completions
+  model: llama-3.1-8b-instant
+  temperature: 0.05  # Lowest temperature for most consistent, deterministic responses
+  max_tokens:
+    intent: 1500
+    tool: 2000
   rate_limits:
-    requests_per_minute: 500
-    tokens_per_minute: 500000
-    concurrent_requests: 20
-  
-  # Advanced timeout configuration
-  timeouts:
-    request: 45
-    total: 600  # 10 minutes for complex enterprise workloads
-  
-  # Enhanced retry logic
-  retries:
-    max_attempts: 10
-    backoff_factor: 1.5
-    max_wait: 300
-    jitter: true
+    requests_per_minute: 240
+    request_delay: 0.25
 
-# High-scale enrichment configuration
-enrichment:
-  batch_size: 32  # Large batches for enterprise scale
-  confidence_threshold: 0.85  # Higher confidence for enterprise quality
-  
-  # Advanced caching with distributed support
-  caching:
-    enabled: true
-    backend: "redis_cluster"
-    ttl: 7200  # 2 hours
-    max_size: 100000
-    cluster_nodes: ["redis-1:6379", "redis-2:6379", "redis-3:6379"]
-  
-  # Vector storage for semantic similarity
-  vector_store:
-    enabled: true
-    provider: "pinecone"  # Or "weaviate", "qdrant"
-    index_name: "automcp-enterprise"
-    dimensions: 1536
+semantic_transformation:
+  llm_prompts:
+    intent_generation: |
+      Generate an enterprise-grade semantic intent for this API endpoint:
+      Method: {method}
+      Path: {path}
+      Summary: {summary}
+      Domain: {domain_context}
 
-# Enterprise security configuration
+      Enterprise requirements:
+      1. Strategic business-aligned name
+      2. Comprehensive technical summary
+      3. Detailed complexity analysis
+      4. Role-based access context
+      5. Enterprise security requirements
+      6. Granular permission matrix
+      7. Compliance implications
+      8. Data governance aspects
+      9. SLA/Performance requirements
+      10. Integration touchpoints
+
+      Format: Enterprise-grade, audit-ready output
+
+    tool_generation: |
+      Create an enterprise-grade MCP tool definition:
+      Method: {method}
+      Path: {path}
+      Parameters: {parameters}
+      Domain: {domain_context}
+
+      Enterprise requirements:
+      1. Enterprise context description
+      2. Full security assessment
+      3. Complete parameter validation
+      4. Enterprise validation rules
+      5. Performance SLAs
+      6. Compliance metadata
+      7. Rate limiting policies
+      8. Security controls
+      9. Audit requirements
+      10. Data classification
+
+      Format: Enterprise-compliant, governance-ready output
+
+logging:
+  level: INFO
+  format: json
+  redact_keys:
+    - api_key
+    - password
+    - token
+    - secret
+    - credential
+    - pii
+    - sensitive
+
 security:
-  encrypt_outputs: true
-  pii_scrubbing: true
-  api_auth_required: true
-  
-  # Advanced encryption
-  encryption:
-    algorithm: "AES-256-GCM"
-    key_rotation: true
-    key_rotation_interval: "7d"  # More frequent rotation
-    key_management: "hsm"  # Hardware Security Module
-  
-  # Compliance features
-  compliance:
-    gdpr: true
-    hipaa: true
-    sox: true
-    pci_dss: true
-    
-    # Data retention policies
-    data_retention:
-      logs: "2555d"  # 7 years
-      processed_data: "90d"
-      cache: "7d"
-  
-  # Access control
-  rbac:
-    enabled: true
-    roles:
-      - "viewer"
-      - "operator"
-      - "admin"
-      - "super_admin"
-  
-  # API security
-  api_security:
-    rate_limiting: true
-    ip_whitelisting: true
-    jwt_validation: true
-    api_key_rotation: true
+  sensitive_data_patterns:
+    pii:
+      - email
+      - phone
+      - address
+      - ssn
+    credentials:
+      - password
+      - api_key
+      - token
+      - secret
+    business:
+      - account_number
+      - tax_id
+      - contract_id
 
-# Enterprise MCP features
-mcp:
-  generate_tools: true
-  generate_examples: true
-  include_schema_validation: true
-  
-  tools:
-    max_parameters: 50  # Complex enterprise tools
-    max_nesting_depth: 6
-    include_optional_params: true
-    optimize_for_size: false  # Prioritize completeness over size
-    
-  # Enterprise-specific MCP features
-  enterprise_features:
-    batch_generation: true
-    parallel_processing: true
-    custom_templates: true
-    versioning: true
-
-# High-availability configuration
-high_availability:
-  enabled: true
-  
-  # Load balancing
-  load_balancer:
-    algorithm: "round_robin"
-    health_check_interval: 10
-    failure_threshold: 3
-  
-  # Clustering
-  cluster:
-    enabled: true
-    nodes: ["node-1", "node-2", "node-3"]
-    leader_election: true
-  
-  # Backup and recovery
-  backup:
-    enabled: true
-    interval: "1h"
-    retention: "30d"
-    storage: "s3"
-
-# Enterprise monitoring and observability
-monitoring:
-  enabled: true
-  
-  metrics:
-    prometheus: true
-    custom_metrics: true
-    business_metrics: true
-  
-  alerting:
-    enabled: true
-    channels: ["slack", "email", "pagerduty"]
-    rules:
-      - name: "high_error_rate"
-        condition: "error_rate > 5%"
-        severity: "critical"
-      - name: "high_latency"
-        condition: "p95_latency > 10s"
-        severity: "warning"
-  
-  tracing:
-    enabled: true
-    provider: "jaeger"
-    sample_rate: 0.01  # 1% sampling for high volume
-  
-  apm:
-    enabled: true
-    provider: "datadog"
-
-# Enterprise integrations
-integrations:
-  # Identity providers
-  identity:
-    saml: true
-    ldap: true
-    active_directory: true
-    okta: true
-  
-  # API gateways
-  api_gateway:
-    kong: true
-    ambassador: true
-    istio: true
-  
-  # Message queues
-  messaging:
-    kafka: true
-    rabbitmq: true
-    redis_streams: true
-  
-  # Databases
-  databases:
-    postgresql: true
-    mongodb: true
-    elasticsearch: true
-
-# Resource management for enterprise scale
-resources:
-  # CPU and memory limits
-  limits:
-    cpu: "16"
-    memory: "32GB"
-    
-  # Auto-scaling
-  autoscaling:
-    enabled: true
-    min_replicas: 3
-    max_replicas: 100
-    cpu_threshold: 70
-    memory_threshold: 80
-  
-  # Storage
-  storage:
-    persistent: true
-    size: "1TB"
-    class: "fast-ssd"
-
-# Governance and compliance
-governance:
-  # Change management
-  change_management:
-    approval_required: true
-    approvers: ["admin", "compliance_officer"]
-  
-  # Data lineage
-  data_lineage:
-    enabled: true
-    track_transformations: true
-    
-  # Policy enforcement
-  policies:
-    data_classification: true
-    access_control: true
-    encryption_at_rest: true
-    encryption_in_transit: true
+validation:
+  enterprise_rules:
+    max_nested_depth: 10
+    max_array_items: 1000
+    max_string_length: 10000
+    required_fields:
+      - security_classification
+      - data_owner
+      - retention_policy

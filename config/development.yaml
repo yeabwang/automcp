@@ -1,102 +1,177 @@
 # =============================================================================
 # AutoMCP Development Configuration
 # =============================================================================
-# Optimized for development workflow with detailed logging and relaxed validation
+# Development-friendly settings with relaxed validation and debug features
+# Inherits from default.yaml and overrides for development workflow
 
-$schema: "../schemas/automcp-config-v1.schema.json"
-version: "1.0.0"
 environment: "development"
-
-# Inherit from default and override specific settings
-extends: "default.yaml"
+profile: "development"
 
 # =============================================================================
-# Development-Specific Overrides
+# Development Parser Configuration - Enhanced
 # =============================================================================
+# Increased workers for faster development iterations
+parser_workers: 8
+parsers:
+  workers: 8
 
-# Enhanced logging for debugging
+# =============================================================================
+# Development LLM Configuration - Enhanced Settings
+# =============================================================================
+llm_client:
+  api_key: "${AUTOMCP_LLM_API_KEY}"  # Set via environment variable
+  provider_settings:
+    groq:
+      optimal_batch_size: 8
+      rate_limit_requests_per_minute: 6000
+    openai:
+      optimal_batch_size: 10
+      rate_limit_requests_per_minute: 3000
+    anthropic:
+      optimal_batch_size: 5
+      rate_limit_requests_per_minute: 1000
+    claude:
+      optimal_batch_size: 5
+      rate_limit_requests_per_minute: 1000
+
+llm:
+  api_key: "${AUTOMCP_LLM_API_KEY}"  # Set via environment variable
+  provider_settings:
+    groq:
+      optimal_batch_size: 8
+      rate_limit_requests_per_minute: 6000
+    openai:
+      optimal_batch_size: 10
+      rate_limit_requests_per_minute: 3000
+    anthropic:
+      optimal_batch_size: 5
+      rate_limit_requests_per_minute: 1000
+    claude:
+      optimal_batch_size: 5
+      rate_limit_requests_per_minute: 1000
+  
+  # More permissive rate limits for development
+  rate_limits:
+    requests_per_minute: 60
+    tokens_per_minute: 80000
+    concurrent_requests: 5
+
+# =============================================================================
+# Development Enrichment Configuration
+# =============================================================================
+# Smaller batches for easier debugging, faster feedback
+enrichment:
+  batch_size: 4
+  max_batch_size: 12
+  use_memory: false  # Simpler setup for development
+  stage_settings:
+    semantic_transformation:
+      batch_size: 3
+      timeout_seconds: 45
+    context_inference:
+      batch_size: 4
+      timeout_seconds: 30
+    mcp_generation:
+      batch_size: 2
+      timeout_seconds: 60
+
+# =============================================================================
+# Development Output Configuration
+# =============================================================================
+# Relaxed validation for faster development iterations
+output:
+  strict_validation: false
+  include_examples: true
+  include_metadata: true
+  versioning: true  # Track changes during development
+  editable: true
+  quality_assessment:
+    enabled: true
+    generate_report: true
+    min_acceptable_score: 60  # Relaxed for development
+    sampling_rate: 1.0  # Assess everything for debugging
+
+# =============================================================================
+# Development MCP Configuration
+# =============================================================================
+mcp:
+  generate_tools: true
+  generate_examples: true
+  generate_prompts: true
+  tool_generation:
+    include_advanced_schemas: true
+    generate_error_responses: true
+    include_rate_limits: false  # Simplified for development
+    generate_sdk_examples: true
+
+# =============================================================================
+# Development Security Configuration
+# =============================================================================
+# Relaxed security for development convenience
+security:
+  encrypt_outputs: false
+  api_auth_required: false
+  pii_scrubbing: true  # Still scrub PII in development
+
+# =============================================================================
+# Development Logging Configuration
+# =============================================================================
+# Verbose logging for debugging
 logging:
   level: "DEBUG"
   format: "structured"
   log_progress: true
-  profile_performance: true  # Enable profiling in dev
-  
+  profile_performance: true  # Enable profiling in development
   file:
     enabled: true
     path: "logs/automcp-dev.log"
     max_size: "50MB"
     backup_count: 10
 
-# More conservative rate limits for development
-llm:
-  rate_limits:
-    requests_per_minute: 20  # Lower for dev to avoid hitting limits
-    tokens_per_minute: 30000
-    concurrent_requests: 2
-  
-  # Shorter timeouts for faster feedback
-  timeouts:
-    request: 20
-    total: 60
-
-# Smaller batch sizes for easier debugging
-enrichment:
-  batch_size: 2  # Process smaller batches for easier debugging
-  confidence_threshold: 0.6  # More lenient for experimentation
-
-# Relaxed validation for rapid iteration
+# =============================================================================
+# Development Validation Configuration
+# =============================================================================
+# Relaxed validation for faster iterations
 validation:
   strict: false
   schema_validation: true
-  parameter_validation: false  # Allow incomplete params during dev
-  output_validation: false
+  parameter_validation: true
+  output_validation: false  # Allow partial outputs
 
-output:
-  strict_validation: false
-  pretty_print: true  # Always pretty print in dev
-  include_examples: true
-  include_metadata: true
-  include_debug_info: true  # Extra debug information
+# =============================================================================
+# Development Monitoring Configuration
+# =============================================================================
+# Enable all monitoring for development debugging
+monitoring:
+  metrics_enabled: true
+  health_check_port: 8080
+  log_sampling_rate: 1.0  # Log everything for debugging
+  slow_query_threshold: 2  # More sensitive
 
-# Security relaxed for development
-security:
-  encrypt_outputs: false
-  pii_scrubbing: true  # Still scrub PII in dev
-  api_auth_required: false
+# =============================================================================
+# Development Exporter Configuration
+# =============================================================================
+exporter:
+  types:
+    - file
+    - api  # Enable API for development testing
+  api_auth: false
 
-# MCP settings optimized for development
-mcp:
-  generate_tools: true
-  generate_examples: true
-  include_schema_validation: false  # Skip for faster iteration
-  
-  tools:
-    max_parameters: 10  # Smaller for easier testing
-    max_nesting_depth: 2
-    include_optional_params: true
-    include_debug_metadata: true
+# =============================================================================
+# Development Error Handling Configuration
+# =============================================================================
+# More retries and detailed error reporting
+error_handling:
+  max_retries: 5
+  circuit_breaker:
+    failure_threshold: 10  # More tolerant
+    recovery_timeout: 30  # Faster recovery
 
-# Development-specific features
-development:
-  hot_reload: true
-  mock_llm_responses: false  # Set to true to use mock responses
-  save_intermediate_results: true
-  verbose_errors: true
-  
-  # Development data paths
-  paths:
-    test_data: "tests/fixtures"
-    output_dir: "dev_outputs"
-    cache_dir: ".dev_cache"
-
-# Parser settings for development
-parsers:
-  workers: 2  # Fewer workers for easier debugging
-  timeout: 60  # Longer timeout for debugging
-  
-  # Enable additional parsing features for development
-  experimental:
+# =============================================================================
+# Development Semantic Transformation Enhancements
+# =============================================================================
+semantic_transformation:
+  caching:
     enabled: true
-    features:
-      - "advanced_schema_inference"
-      - "auto_example_generation"
+    ttl_hours: 12  # Shorter cache for development changes
+    max_cache_size: 5000

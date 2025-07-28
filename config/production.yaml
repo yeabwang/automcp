@@ -1,160 +1,189 @@
 # =============================================================================
 # AutoMCP Production Configuration
 # =============================================================================
-# Optimized for production deployment with performance, security, and reliability
+# Production-optimized settings with strict validation and performance features
+# Inherits from default.yaml and overrides for production deployment
 
-$schema: "../schemas/automcp-config-v1.schema.json"
-version: "1.0.0"
 environment: "production"
-
-# Inherit from default and override for production
-extends: "default.yaml"
+profile: "production"
 
 # =============================================================================
-# Production-Specific Overrides
+# Production Parser Configuration - High Performance
 # =============================================================================
+# Maximum workers for production throughput
+parser_workers: 16
+parsers:
+  workers: 16
 
-# Optimized logging for production
+# =============================================================================
+# Production LLM Configuration - Optimized Settings
+# =============================================================================
+llm_client:
+  api_key: "${AUTOMCP_LLM_API_KEY}"  # Set via environment variable
+  provider_settings:
+    groq:
+      optimal_batch_size: 16
+      rate_limit_requests_per_minute: 6000
+    openai:
+      optimal_batch_size: 20
+      rate_limit_requests_per_minute: 3000
+    anthropic:
+      optimal_batch_size: 10
+      rate_limit_requests_per_minute: 1000
+    claude:
+      optimal_batch_size: 10
+      rate_limit_requests_per_minute: 1000
+
+llm:
+  api_key: "${AUTOMCP_LLM_API_KEY}"  # Set via environment variable
+  provider_settings:
+    groq:
+      optimal_batch_size: 16
+      rate_limit_requests_per_minute: 6000
+    openai:
+      optimal_batch_size: 20
+      rate_limit_requests_per_minute: 3000
+    anthropic:
+      optimal_batch_size: 10
+      rate_limit_requests_per_minute: 1000
+    claude:
+      optimal_batch_size: 10
+      rate_limit_requests_per_minute: 1000
+  
+  # Production rate limits - conservative but efficient
+  rate_limits:
+    requests_per_minute: 120
+    tokens_per_minute: 160000
+    concurrent_requests: 8
+
+# =============================================================================
+# Production Enrichment Configuration
+# =============================================================================
+# Larger batches for production efficiency
+enrichment:
+  batch_size: 16
+  max_batch_size: 32
+  use_memory: true  # Enable vector stores for production
+  stage_settings:
+    semantic_transformation:
+      batch_size: 12
+      timeout_seconds: 60
+    context_inference:
+      batch_size: 16
+      timeout_seconds: 45
+    mcp_generation:
+      batch_size: 8
+      timeout_seconds: 90
+
+# =============================================================================
+# Production Output Configuration
+# =============================================================================
+# Strict validation for production reliability
+output:
+  strict_validation: true
+  include_examples: true
+  include_metadata: true
+  versioning: false  # Disable for production performance
+  editable: false  # Read-only for production
+  quality_assessment:
+    enabled: true
+    generate_report: true
+    min_acceptable_score: 80  # Higher bar for production
+    sampling_rate: 0.1  # Sample 10% for performance
+
+# =============================================================================
+# Production MCP Configuration
+# =============================================================================
+mcp:
+  generate_tools: true
+  generate_examples: true
+  generate_prompts: true
+  tool_generation:
+    include_advanced_schemas: true
+    generate_error_responses: true
+    include_rate_limits: true  # Full production features
+    generate_sdk_examples: true
+
+# =============================================================================
+# Production Security Configuration
+# =============================================================================
+# Full security for production
+security:
+  encrypt_outputs: true  # Enable with SECURITY_KEY
+  api_auth_required: true
+  pii_scrubbing: true
+  input_sanitization: true
+  output_encoding: true
+
+# =============================================================================
+# Production Logging Configuration
+# =============================================================================
+# Production-appropriate logging
 logging:
   level: "INFO"
-  format: "json"  # Structured JSON for log aggregation
-  log_progress: false  # Reduce log noise
-  profile_performance: false
-  
+  format: "json"  # Structured for log aggregation
+  log_progress: false  # Reduce noise in production
+  profile_performance: false  # Disable profiling for performance
   file:
     enabled: true
-    path: "/var/log/automcp/automcp.log"
+    path: "logs/automcp-prod.log"
     max_size: "100MB"
-    backup_count: 20
-    rotation: "daily"
+    backup_count: 30
 
-# Production LLM settings with higher throughput
-llm:
-  provider: "groq"  # Can be overridden via environment
-  model: "llama-3.1-70b-versatile"  # More capable model for production
-  
-  rate_limits:
-    requests_per_minute: 100  # Higher for production
-    tokens_per_minute: 100000
-    concurrent_requests: 8
-  
-  timeouts:
-    request: 30
-    total: 180  # Longer total timeout for complex processing
-  
-  retries:
-    max_attempts: 5  # More retries for reliability
-    backoff_factor: 2
-    max_wait: 120
-
-# High-performance enrichment settings
-enrichment:
-  batch_size: 16  # Larger batches for efficiency
-  confidence_threshold: 0.8  # Higher confidence required
-  
-  # Production-optimized caching
-  caching:
-    enabled: true
-    ttl: 3600  # Cache for 1 hour
-    max_size: 10000
-
-# Strict validation for production
+# =============================================================================
+# Production Validation Configuration
+# =============================================================================
+# Strict validation for production reliability
 validation:
   strict: true
   schema_validation: true
   parameter_validation: true
   output_validation: true
-  fail_fast: true  # Stop on first validation error
 
-output:
-  strict_validation: true
-  pretty_print: false  # Compact output for efficiency
-  include_examples: true
-  include_metadata: false  # Reduce output size
-  include_debug_info: false
-
-# Enhanced security for production
-security:
-  encrypt_outputs: true
-  pii_scrubbing: true
-  api_auth_required: true
-  
-  # Enhanced PII patterns for production
-  sensitive_patterns:
-    high: ["password", "secret", "key", "token", "credit_card", "ssn", "tax_id", "medical_record"]
-    medium: ["email", "phone", "address", "profile", "personal_id", "ip_address"]
-    low: ["name", "username", "user_id"]
-  
-  # Encryption settings
-  encryption:
-    algorithm: "AES-256-GCM"
-    key_rotation: true
-    key_rotation_interval: "30d"
-
-# Production MCP settings
-mcp:
-  generate_tools: true
-  generate_examples: true
-  include_schema_validation: true
-  
-  tools:
-    max_parameters: 20  # Allow more complex tools
-    max_nesting_depth: 4
-    include_optional_params: true
-    optimize_for_size: true
-
-# Performance optimizations
-performance:
-  # Connection pooling
-  connection_pool:
-    size: 20
-    max_overflow: 30
-    timeout: 30
-  
-  # Caching configuration
-  cache:
-    enabled: true
-    backend: "redis"  # Use Redis for distributed caching
-    default_ttl: 3600
-    max_memory: "1GB"
-  
-  # Async processing
-  async:
-    max_workers: 16
-    queue_size: 1000
-    timeout: 300
-
-# Monitoring and observability
+# =============================================================================
+# Production Monitoring Configuration
+# =============================================================================
+# Full monitoring for production observability
 monitoring:
-  enabled: true
-  metrics:
-    prometheus: true
-    custom_metrics: true
-  
-  health_checks:
-    enabled: true
-    interval: 30
-    timeout: 10
-  
-  tracing:
-    enabled: true
-    sample_rate: 0.1  # Sample 10% of requests
+  metrics_enabled: true
+  health_check_port: 8080
+  log_sampling_rate: 0.01  # 1% sampling for performance
+  slow_query_threshold: 10  # More tolerant in production
 
-# Error handling for production
+# =============================================================================
+# Production Exporter Configuration
+# =============================================================================
+exporter:
+  types:
+    - file
+    - api
+    - memory  # Full export capabilities
+  api_auth: true
+
+# =============================================================================
+# Production Error Handling Configuration
+# =============================================================================
+# Conservative error handling for production stability
 error_handling:
-  capture_exceptions: true
-  sentry_dsn: "${SENTRY_DSN}"  # From environment
-  max_traceback_frames: 10
-  
-  # Circuit breaker settings
+  max_retries: 3
   circuit_breaker:
-    failure_threshold: 5
-    recovery_timeout: 60
-    expected_exception: "AutoMCPError"
+    failure_threshold: 5  # Strict failure threshold
+    recovery_timeout: 60  # Standard recovery time
 
-# Resource limits
-limits:
-  max_file_size: "100MB"
-  max_processing_time: 600  # 10 minutes
-  max_memory_usage: "2GB"
-  max_concurrent_operations: 50
+# =============================================================================
+# Production Semantic Transformation Enhancements
+# =============================================================================
+semantic_transformation:
+  caching:
+    enabled: true
+    ttl_hours: 48  # Longer cache for production stability
+    max_cache_size: 50000  # Large cache for production
+
+# =============================================================================
+# Production Telemetry Configuration
+# =============================================================================
+# Full telemetry for production observability
+telemetry:
+  tracing_enabled: true
+  metrics_enabled: true
+  otel_endpoint: "${OTEL_ENDPOINT}"  # Set via environment

@@ -1,14 +1,13 @@
 {
   "white": {
     "operations": [
-      "SearchDocuments",
-      "SearchSuggestionsIntent"
+      "search_items"
     ],
     "description": "Safe read-only operations"
   },
   "grey": {
     "operations": [
-      "UploadDocumentsIntent"
+      "create_new_item"
     ],
     "description": "Moderate write operations"
   },
@@ -17,9 +16,9 @@
     "description": "Dangerous operations"
   },
   "metadata": {
-    "total_intents": 3,
-    "total_tools": 3,
+    "total_intents": 2,
+    "total_tools": 2,
     "aws_service": "cloudsearch",
-    "processing_timestamp": 1753698357.7997687
+    "processing_timestamp": 1753705187.1176355
   }
 }

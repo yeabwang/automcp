@@ -14,6 +14,7 @@ import sys
 from pathlib import Path
 from typing import List, Dict, Optional
 import click
+from .config import load_config, get_config, list_environments as get_available_environments
 
 def extract_parameter_details(operation):
     """Extract key parameter information efficiently."""
@@ -52,17 +53,86 @@ def extract_parameter_details(operation):
     
     return param_info
 
-def process_all_endpoints_optimized(spec_file: Path, output_dir: Path):
-    """Process all endpoints with optimized prompts - EXACT COPY from working test."""
-    print("🚀 Processing All Endpoints with Optimized Groq LLM")
+def process_all_endpoints_optimized(spec_file: Path, output_dir: Path, environment: Optional[str] = None):
+    """Process all endpoints with optimized prompts using configuration system."""
+    print("🚀 Processing All Endpoints with Configurable LLM Pipeline")
     print("=" * 60)
     
-    # API configuration
-    api_key = "REDACTED_GROQ_KEY"
-    model = "llama3-70b-8192"
+    # Load configuration for specified environment
+    config = load_config(environment)
     
-    print(f"✅ Using API Key: {api_key[:20]}...")
-    print(f"✅ Using Model: {model}")
+    # Get LLM configuration
+    llm_config = config.get('llm', {})
+    api_key = config.get('llm.api_key')
+    model = config.get('llm.model', 'llama-3.1-8b-instant')
+    provider = config.get('llm.provider', 'groq')
+    api_endpoint = config.get('llm.endpoint')
+    
+    # Set endpoint based on provider if not explicitly configured
+    if not api_endpoint:
+        endpoints = {
+            'groq': 'https://api.groq.com/openai/v1/chat/completions',
+            'openai': 'https://api.openai.com/v1/chat/completions'
+        }
+        api_endpoint = endpoints.get(provider, endpoints['groq'])
+    
+    print(f"✅ Environment: {config.environment}")
+    print(f"✅ LLM Provider: {provider}")
+    print(f"✅ Model: {model}")
+    print(f"✅ Endpoint: {api_endpoint}")
+    print(f"✅ API Key: {'✅ Configured' if api_key else '❌ Missing'}")
+    
+    if not api_key:
+        print("❌ ERROR: LLM API key not configured!")
+        print("   Set AUTOMCP_LLM_API_KEY environment variable or configure in config files")
+        return {'error': 'API key not configured'}
+    
+    # Get generation parameters from config
+    generation_config = config.get('llm.generation', {})
+    temperature = generation_config.get('temperature', 0.1)
+    max_tokens_intent = generation_config.get('max_tokens', {}).get('intent', 1000)
+    max_tokens_tool = generation_config.get('max_tokens', {}).get('tool', 1500)
+    
+    # Get processing configuration
+    processing_config = config.get('processing', {})
+    service_config = processing_config.get('service', {})
+    prompt_config = processing_config.get('prompts', {})
+    
+    # Auto-detect service from spec or use config
+    service_name = service_config.get('name', 'auto-detect')
+    service_subdomain = service_config.get('subdomain', 'auto-detect')
+    
+    if service_name == 'auto-detect':
+        # Simple detection from spec file name or content
+        spec_name = spec_file.stem.lower()
+        if 'aws' in spec_name or 'cloudsearch' in spec_name:
+            service_name = 'aws'
+            service_subdomain = 'cloudsearch'
+        else:
+            service_name = 'generic'
+            service_subdomain = 'api'
+    
+    # Get prompt configuration
+    intent_config = prompt_config.get('intent', {})
+    tool_config = prompt_config.get('tool', {})
+    
+    domain = intent_config.get('domain', 'api')
+    complexity_levels = intent_config.get('complexity_levels', ['simple', 'moderate', 'complex'])
+    auth_types = intent_config.get('auth_types', ['api_key'])
+    default_complexity = tool_config.get('default_complexity', 'moderate')
+    safety_levels = tool_config.get('safety_levels', {
+        'GET': 'safe', 'POST': 'moderate', 'PUT': 'moderate', 'DELETE': 'dangerous'
+    })
+    
+    print(f"✅ Service: {service_name.upper()} {service_subdomain}")
+    print(f"✅ Temperature: {temperature}")
+    print(f"✅ Max Tokens: Intent={max_tokens_intent}, Tool={max_tokens_tool}")
+    
+    # Rate limiting settings from config
+    rate_limits = llm_config.get('rate_limits', {})
+    request_delay = 60.0 / rate_limits.get('requests_per_minute', 60)  # Default 1 req/sec
+    
+    print(f"✅ Request Delay: {request_delay:.2f}s (based on rate limits)")
     
     # Load the API specification
     with open(spec_file, 'r') as f:
@@ -88,8 +158,7 @@ def process_all_endpoints_optimized(spec_file: Path, output_dir: Path):
         param_count = len(ep['parameters'])
         print(f"   {i}. {ep['method']} {ep['operationId']} - {param_count} params")
     
-    # Groq API setup
-    url = "https://api.groq.com/openai/v1/chat/completions"
+    # Groq API setup with configured values
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json"
@@ -135,7 +204,7 @@ API: {endpoint['method']} {endpoint['operationId']} - {endpoint['summary']}"""
         
         try:
             # Make API call for intent
-            response = requests.post(url, headers=headers, json=intent_payload)
+            response = requests.post(api_endpoint, headers=headers, json=intent_payload)
             if response.status_code == 200:
                 result = response.json()
                 intent_response = result['choices'][0]['message']['content']
@@ -156,7 +225,7 @@ API: {endpoint['method']} {endpoint['operationId']} - {endpoint['summary']}"""
                 if response.status_code == 413:
                     print(f"   📊 Token limit exceeded - optimizing further")
             
-            time.sleep(0.5)
+            time.sleep(request_delay)
             
             # Optimized tool prompt with parameter info
             param_summary = []
@@ -197,7 +266,7 @@ Parameters: {param_list}"""
             }
             
             # Make API call for tool
-            response = requests.post(url, headers=headers, json=tool_payload)
+            response = requests.post(api_endpoint, headers=headers, json=tool_payload)
             if response.status_code == 200:
                 result = response.json()
                 tool_response = result['choices'][0]['message']['content']
@@ -235,7 +304,7 @@ Parameters: {param_list}"""
                 if response.status_code == 413:
                     print(f"   📊 Token limit exceeded for tool generation")
             
-            time.sleep(0.5)
+            time.sleep(request_delay)
             
         except Exception as e:
             print(f"   ❌ Error processing endpoint: {e}")
@@ -334,22 +403,39 @@ Parameters: {param_list}"""
 
 @click.group()
 @click.version_option(version="1.0.0", prog_name="AutoMCP")
-def cli():
-    """🚀 AutoMCP - Real LLM Pipeline CLI"""
-    pass
+@click.option('--environment', '-e', 
+              type=click.Choice(['development', 'production', 'enterprise']), 
+              help="Configuration environment to use")
+@click.pass_context
+def cli(ctx, environment):
+    """🚀 AutoMCP - Configurable LLM Pipeline CLI"""
+    # Ensure context exists and store environment
+    ctx.ensure_object(dict)
+    ctx.obj['environment'] = environment
+    
+    if environment:
+        print(f"🔧 Using environment: {environment}")
+    else:
+        print("🔧 Using default environment configuration")
 
 @cli.command()
 @click.argument('spec_file', type=click.Path(exists=True, path_type=Path))
 @click.option('--output', '-o', type=click.Path(path_type=Path), help="Output directory")
 @click.option('--format', type=click.Choice(['json', 'yaml']), default='json', help="Output format")
 @click.option('--dry-run', is_flag=True, help="Analyze without generating output")
-def transform(spec_file, output, format, dry_run):
-    """🔄 Transform API spec using REAL LLM pipeline (not dummy data)"""
+@click.pass_context
+def transform(ctx, spec_file, output, format, dry_run):
+    """🔄 Transform API spec using configurable LLM pipeline"""
+    environment = ctx.obj.get('environment')
+    
     if not output:
         spec_name = spec_file.stem
-        output = Path("outputs") / spec_name
+        # Use configured output directory
+        config = load_config(environment)
+        base_output_dir = Path(config.get('output.dir', 'outputs'))
+        output = base_output_dir / spec_name
     
-    print(f"🚀 AutoMCP Real LLM Transformation")
+    print(f"🚀 AutoMCP Configurable LLM Transformation")
     print(f"📥 Input: {spec_file}")
     print(f"📤 Output: {output}")
     print(f"📋 Format: {format}")
@@ -357,8 +443,8 @@ def transform(spec_file, output, format, dry_run):
     print()
     
     if not dry_run:
-        # Use the EXACT working function
-        process_all_endpoints_optimized(spec_file, output)
+        # Use the configured processing function
+        process_all_endpoints_optimized(spec_file, output, environment)
     else:
         print("Dry run - no files generated")
 
@@ -376,10 +462,85 @@ def health_check():
     else:
         print("⚠️  Inputs directory: Missing")
     
-    if Path("outputs").exists():
-        print("✅ Outputs directory: Found")
+    # Check config directory
+    if Path("config").exists():
+        print("✅ Config directory: Found")
+        try:
+            config = get_config()
+            print(f"✅ Configuration loaded: {config.environment}")
+        except Exception as e:
+            print(f"❌ Configuration error: {e}")
     else:
-        print("⚠️  Outputs directory: Missing")
+        print("❌ Config directory: Missing")
+    
+    # Check output directory from config
+    try:
+        config = get_config()
+        output_dir = Path(config.get('output.dir', 'outputs'))
+        if output_dir.exists():
+            print(f"✅ Output directory: Found ({output_dir})")
+        else:
+            print(f"⚠️  Output directory: Missing ({output_dir})")
+    except:
+        print("⚠️  Could not check output directory")
+
+@cli.command()
+def list_environments():
+    """📋 List available configuration environments"""
+    print("📋 Available AutoMCP Environments:")
+    print("=" * 40)
+    
+    try:
+        environments = get_available_environments()
+        for env in environments:
+            if env == 'default':
+                print(f"   📁 {env} (base configuration)")
+            else:
+                print(f"   🔧 {env}")
+        
+        print(f"\n💡 Use --environment/-e flag to select: automcp -e production transform ...")
+    except Exception as e:
+        print(f"❌ Error listing environments: {e}")
+
+@cli.command()
+@click.option('--environment', '-e', 
+              type=click.Choice(['development', 'production', 'enterprise']), 
+              help="Environment to show config for")
+@click.pass_context
+def show_config(ctx, environment):
+    """📖 Show current configuration"""
+    # Use environment from CLI context if not specified in command
+    env = environment or ctx.obj.get('environment')
+    
+    try:
+        config = load_config(env)
+        
+        print(f"📖 AutoMCP Configuration ({config.environment})")
+        print("=" * 50)
+        
+        # LLM Configuration
+        print("🧠 LLM Configuration:")
+        print(f"   Provider: {config.get('llm.provider', 'Not set')}")
+        print(f"   Model: {config.get('llm.model', 'Not set')}")
+        print(f"   Endpoint: {config.get('llm.endpoint', 'Auto-detected')}")
+        print(f"   API Key: {'✅ Configured' if config.get('llm.api_key') else '❌ Missing'}")
+        
+        # Rate Limiting
+        rate_limits = config.get('llm.rate_limits', {})
+        print(f"   Rate Limit: {rate_limits.get('requests_per_minute', 'Not set')} req/min")
+        
+        # Output Configuration
+        print(f"\n📤 Output Configuration:")
+        print(f"   Directory: {config.get('output.dir', 'Not set')}")
+        print(f"   Format: {config.get('output.format', 'Not set')}")
+        
+        # Logging
+        print(f"\n📝 Logging Configuration:")
+        print(f"   Level: {config.get('logging.level', 'Not set')}")
+        print(f"   Format: {config.get('logging.format', 'Not set')}")
+        
+    except Exception as e:
+        print(f"❌ Error loading configuration: {e}")
 
 def main():
     """Main entry point."""
