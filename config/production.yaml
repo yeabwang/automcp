@@ -8,182 +8,140 @@ environment: "production"
 profile: "production"
 
 # =============================================================================
-# Production Parser Configuration - High Performance
-# =============================================================================
-# Maximum workers for production throughput
-parser_workers: 16
-parsers:
-  workers: 16
-
-# =============================================================================
 # Production LLM Configuration - Optimized Settings
 # =============================================================================
 llm_client:
-  api_key: "${AUTOMCP_LLM_API_KEY}"  # Set via environment variable
   provider_settings:
     groq:
-      optimal_batch_size: 16
-      rate_limit_requests_per_minute: 6000
-    openai:
-      optimal_batch_size: 20
-      rate_limit_requests_per_minute: 3000
-    anthropic:
-      optimal_batch_size: 10
-      rate_limit_requests_per_minute: 1000
-    claude:
-      optimal_batch_size: 10
-      rate_limit_requests_per_minute: 1000
-
-llm:
-  api_key: "${AUTOMCP_LLM_API_KEY}"  # Set via environment variable
-  provider_settings:
-    groq:
-      optimal_batch_size: 16
-      rate_limit_requests_per_minute: 6000
-    openai:
-      optimal_batch_size: 20
-      rate_limit_requests_per_minute: 3000
-    anthropic:
-      optimal_batch_size: 10
-      rate_limit_requests_per_minute: 1000
-    claude:
-      optimal_batch_size: 10
-      rate_limit_requests_per_minute: 1000
-  
-  # Production rate limits - conservative but efficient
-  rate_limits:
-    requests_per_minute: 120
-    tokens_per_minute: 160000
-    concurrent_requests: 8
+      max_tokens: 1000      # Optimized for production efficiency
+      temperature: 0.1      # Lower temperature for consistent responses
+      optimal_batch_size: 16  # Larger batches for production throughput
+      rate_limit_requests_per_minute: 120
 
 # =============================================================================
-# Production Enrichment Configuration
+# Production Parser Configuration - High Performance
 # =============================================================================
-# Larger batches for production efficiency
+parser_workers: 16
+parsers:
+  workers: 16
+  timeout: 30  # Stricter timeout for production
+
+# =============================================================================
+# Production Semantic Transformation - Optimized Prompts
+# =============================================================================
+semantic_transformation:
+  llm_prompts:
+    intent_generation: |
+      Generate a production-grade semantic intent for this API endpoint:
+      Method: {method}
+      Path: {path}
+      Summary: {summary}
+      Domain: {domain_context}
+
+      Required elements:
+      1. Clear, business-focused name
+      2. Concise yet comprehensive summary
+      3. Accurate complexity assessment
+      4. Specific user context and permissions
+      5. Security requirements with rationale
+      6. Clear permission levels with justification
+      7. Business impact assessment
+      8. Error handling implications
+
+      Format: Structured, consistent, production-ready output
+
+    tool_generation: |
+      Create a production-grade MCP tool definition:
+      Method: {method}
+      Path: {path}
+      Parameters: {parameters}
+      Domain: {domain_context}
+
+      Required elements:
+      1. Production-ready description
+      2. Comprehensive safety analysis
+      3. Complete parameter validation
+      4. Required field validation rules
+      5. Performance metadata
+      6. Error handling guidance
+      7. Rate limiting considerations
+      8. Security implications
+
+      Format: Enterprise-ready, validated output
+
+# =============================================================================
+# Production Enrichment - Optimized Performance
+# =============================================================================
 enrichment:
   batch_size: 16
   max_batch_size: 32
-  use_memory: true  # Enable vector stores for production
-  stage_settings:
-    semantic_transformation:
-      batch_size: 12
-      timeout_seconds: 60
-    context_inference:
-      batch_size: 16
-      timeout_seconds: 45
-    mcp_generation:
-      batch_size: 8
-      timeout_seconds: 90
+  timeout_seconds: 30
+  retry_attempts: 3
+  use_memory: false
 
 # =============================================================================
-# Production Output Configuration
+# Production Output - Strict Validation
 # =============================================================================
-# Strict validation for production reliability
 output:
   strict_validation: true
-  include_examples: true
-  include_metadata: true
-  versioning: false  # Disable for production performance
-  editable: false  # Read-only for production
   quality_assessment:
     enabled: true
     generate_report: true
-    min_acceptable_score: 80  # Higher bar for production
-    sampling_rate: 0.1  # Sample 10% for performance
+    min_acceptable_score: 80  # Higher threshold for production
+    use_llm_assessment: true
+    sampling_rate: 0.5  # Sample for performance
 
 # =============================================================================
-# Production MCP Configuration
+# Production Logging - Structured
 # =============================================================================
-mcp:
-  generate_tools: true
-  generate_examples: true
-  generate_prompts: true
-  tool_generation:
-    include_advanced_schemas: true
-    generate_error_responses: true
-    include_rate_limits: true  # Full production features
-    generate_sdk_examples: true
-
-# =============================================================================
-# Production Security Configuration
-# =============================================================================
-# Full security for production
-security:
-  encrypt_outputs: true  # Enable with SECURITY_KEY
-  api_auth_required: true
-  pii_scrubbing: true
-  input_sanitization: true
-  output_encoding: true
-
-# =============================================================================
-# Production Logging Configuration
-# =============================================================================
-# Production-appropriate logging
 logging:
-  level: "INFO"
-  format: "json"  # Structured for log aggregation
-  log_progress: false  # Reduce noise in production
-  profile_performance: false  # Disable profiling for performance
-  file:
-    enabled: true
-    path: "logs/automcp-prod.log"
-    max_size: "100MB"
-    backup_count: 30
+  level: INFO
+  format: json  # Structured logging for production
+  redact_keys:
+    - api_key
+    - password
+    - token
+    - secret
+    - credential
 
 # =============================================================================
-# Production Validation Configuration
+# Production Validation - Strict
 # =============================================================================
-# Strict validation for production reliability
 validation:
   strict: true
-  schema_validation: true
-  parameter_validation: true
-  output_validation: true
 
 # =============================================================================
-# Production Monitoring Configuration
+# Production Security - Enhanced
 # =============================================================================
-# Full monitoring for production observability
+security:
+  encrypt_outputs: true  # Enable encryption for production
+  input_sanitization: true
+  output_encoding: true
+  rate_limit_by_key: true
+
+# =============================================================================
+# Production Error Handling - Resilient
+# =============================================================================
+error_handling:
+  max_retries: 3
+  backoff_strategy: "exponential"
+  circuit_breaker:
+    failure_threshold: 5
+    recovery_timeout: 60
+
+# =============================================================================
+# Production Monitoring - Full Observability
+# =============================================================================
 monitoring:
   metrics_enabled: true
   health_check_port: 8080
-  log_sampling_rate: 0.01  # 1% sampling for performance
-  slow_query_threshold: 10  # More tolerant in production
+  prometheus_endpoint: "/metrics"
+  log_sampling_rate: 0.1
+  slow_query_threshold: 5
 
 # =============================================================================
-# Production Exporter Configuration
+# Production Exporter - API Enabled
 # =============================================================================
 exporter:
-  types:
-    - file
-    - api
-    - memory  # Full export capabilities
   api_auth: true
-
-# =============================================================================
-# Production Error Handling Configuration
-# =============================================================================
-# Conservative error handling for production stability
-error_handling:
-  max_retries: 3
-  circuit_breaker:
-    failure_threshold: 5  # Strict failure threshold
-    recovery_timeout: 60  # Standard recovery time
-
-# =============================================================================
-# Production Semantic Transformation Enhancements
-# =============================================================================
-semantic_transformation:
-  caching:
-    enabled: true
-    ttl_hours: 48  # Longer cache for production stability
-    max_cache_size: 50000  # Large cache for production
-
-# =============================================================================
-# Production Telemetry Configuration
-# =============================================================================
-# Full telemetry for production observability
-telemetry:
-  tracing_enabled: true
-  metrics_enabled: true
-  otel_endpoint: "${OTEL_ENDPOINT}"  # Set via environment
+  api_port: 8000
