@@ -4,7 +4,7 @@
 # Key Features:
 # - Fully config-driven: Providers, endpoints, headers, retries, PII patterns, circuit breakers.
 # - Supports **kwargs in query/batch_query for dynamic settings (fixes parsers.py errors).
-# - Supports PII scrubbing in prompts/responses with config patterns and regex.
+# - Supports PII scrubbing in prompts/responses with config patterns and libraries.
 # - Async query, batch, health check for scalability.
 # - Robust error handling: Config retries, circuit breakers with half-open state.
 # - Metrics tracking, semantic validation, batch optimization.
@@ -12,7 +12,7 @@
 # Critical Requirements:
 # - Industry-standard: aiohttp, tenacity, structlog for async/retries/logging.
 # - Production-ready: Config retries/circuit breakers, metrics, env API keys.
-# - Secure: PII scrubbing with config patterns.
+# - Secure: PII scrubbing with libraries.
 # - Rich: JSON/text/structured responses; semantic methods; batch processing.
 # - Robust: Handles timeouts, rate limits, failures; no hardcoding.
 # - No hardcoded logic: All from config; dynamic **kwargs for flexibility.
@@ -23,25 +23,55 @@
 # AsyncLLMClient Usage: Assumed used in parsers.py and enricher.py for LLM calls; supports **provider_settings via **kwargs.
 # =============================================================================
 
-# Standard library
+# Standard library imports (alphabetical order - industry standard)
 import asyncio
-import uuid
-import os
+import io
 import json
+import logging
+import os
+import ssl
 import time
-import re
+import uuid
+from dataclasses import dataclass
 from enum import Enum
 from typing import List, Dict, Optional, Any, Awaitable
-from dataclasses import dataclass
 
-# Third-party
+# Third-party imports (alphabetical order - industry standard)
 import aiohttp
 import scrubadub
-import logging
 import structlog
-from tenacity import retry, wait_exponential, stop_after_attempt, before_sleep_log
+from aiohttp import ClientError
 from requests.exceptions import RequestException
-from aiohttp import ClientError  # FIX: Imported ClientError for retry logic
+from tenacity import retry, wait_exponential, stop_after_attempt, before_sleep_log
+
+# Industry-standard JSON parsing libraries (conditional imports)
+try:
+    import json_repair
+    HAS_JSON_REPAIR = True
+except ImportError:
+    HAS_JSON_REPAIR = False
+    logging.warning("json-repair library not available - install with: pip install json-repair")
+
+try:
+    import json5
+    HAS_JSON5 = True
+except ImportError:
+    HAS_JSON5 = False
+    logging.warning("json5 library not available - install with: pip install json5")
+
+try:
+    import jsonlines
+    HAS_JSONLINES = True
+except ImportError:
+    HAS_JSONLINES = False
+    logging.warning("jsonlines library not available - install with: pip install jsonlines")
+
+try:
+    import demjson3
+    HAS_DEMJSON = True
+except ImportError:
+    HAS_DEMJSON = False
+    logging.warning("demjson3 library not available - install with: pip install demjson3")
 
 # Local
 from .llm_client_interface import LLMClientInterface, ResponseFormat, LLMProviderSettings
@@ -103,7 +133,6 @@ class EnhancedAsyncLLMClient(LLMClientInterface):
     """
 
     def __init__(self, config: Dict[str, Any], endpoint_url: Optional[str] = None, headers: Optional[Dict[str, str]] = None):
-        # FIX: Restored endpoint_url and headers parameters (fixes missing parameters in __init__)
         self.config = config
         llm_cfg = config.get("llm_client", {})
         if not llm_cfg:
@@ -219,7 +248,7 @@ class EnhancedAsyncLLMClient(LLMClientInterface):
         return headers
 
     async def _ensure_session(self):
-        """Ensure session exists and is not expired."""
+        """Ensure session exists and is not expired with enterprise SSL security."""
         async with self._session_lock:
             now = time.time()
             if (self.session is None or 
@@ -229,11 +258,15 @@ class EnhancedAsyncLLMClient(LLMClientInterface):
                 if self.session and not self.session.closed:
                     await self.session.close()
                 
+                # Enterprise SSL context
+                ssl_context = self._create_enterprise_ssl_context()
+                
                 connector = aiohttp.TCPConnector(
                     limit=self.connector_limit,
                     limit_per_host=self.connector_limit_per_host,
                     keepalive_timeout=60,
-                    enable_cleanup_closed=True
+                    enable_cleanup_closed=True,
+                    ssl=ssl_context
                 )
                 
                 self.session = aiohttp.ClientSession(
@@ -243,7 +276,59 @@ class EnhancedAsyncLLMClient(LLMClientInterface):
                 )
                 
                 self._session_created_at = now
-                self.logger.debug("Session created/renewed")
+                self.logger.debug("Session created/renewed with enterprise SSL")
+
+    def _create_enterprise_ssl_context(self) -> ssl.SSLContext:
+        """Create enterprise-grade SSL context from config."""
+        ssl_config = self.config.get("ssl", {})
+        
+        # Create secure SSL context
+        if ssl_config.get("verify_ssl", True):
+            context = ssl.create_default_context()
+        else:
+            context = ssl.create_default_context()
+            context.check_hostname = False
+            context.verify_mode = ssl.CERT_NONE
+        
+        # Set minimum TLS version from config
+        min_version_str = ssl_config.get("min_tls_version", "TLSv1_2")
+        min_version = getattr(ssl.TLSVersion, min_version_str, ssl.TLSVersion.TLSv1_2)
+        context.minimum_version = min_version
+        
+        # Configure cipher suites for security
+        ciphers = ssl_config.get("ciphers", [
+            "ECDHE+AESGCM",
+            "ECDHE+CHACHA20",
+            "DHE+AESGCM", 
+            "DHE+CHACHA20",
+            "!aNULL",
+            "!MD5",
+            "!DSS"
+        ])
+        if isinstance(ciphers, list):
+            context.set_ciphers(":".join(ciphers))
+        
+        # Set SSL options for security
+        context.options |= ssl.OP_NO_SSLv2 | ssl.OP_NO_SSLv3 | ssl.OP_NO_TLSv1 | ssl.OP_NO_TLSv1_1
+        context.options |= ssl.OP_CIPHER_SERVER_PREFERENCE
+        context.options |= ssl.OP_SINGLE_DH_USE | ssl.OP_SINGLE_ECDH_USE
+        
+        # Load custom CA bundle if specified
+        ca_bundle = ssl_config.get("ca_bundle_path")
+        if ca_bundle and os.path.exists(ca_bundle):
+            context.load_verify_locations(ca_bundle)
+        
+        # Client certificate authentication if specified
+        client_cert = ssl_config.get("client_cert_path")
+        client_key = ssl_config.get("client_key_path")
+        if client_cert and client_key and os.path.exists(client_cert) and os.path.exists(client_key):
+            context.load_cert_chain(client_cert, client_key, ssl_config.get("client_key_password"))
+        
+        self.logger.debug("Enterprise SSL context created", 
+                         verify_ssl=ssl_config.get("verify_ssl", True),
+                         min_tls_version=min_version_str)
+        
+        return context
 
     async def __aenter__(self):
         """Initialize aiohttp session."""
@@ -256,10 +341,8 @@ class EnhancedAsyncLLMClient(LLMClientInterface):
             await self.session.close()
 
     def _scrub_pii(self, text: str) -> str:
-        """Scrub PII using config patterns and scrubadub."""
+        """Scrub PII using scrubadub library."""
         cleaned_text = scrubadub.clean(text)
-        for pattern in self.all_sensitive_keys:
-            cleaned_text = re.sub(rf'\b{re.escape(pattern)}\b', "[REDACTED]", cleaned_text, flags=re.IGNORECASE)
         return cleaned_text
 
     def _check_circuit_breaker(self):
@@ -294,7 +377,6 @@ class EnhancedAsyncLLMClient(LLMClientInterface):
 
     def _preprocess_prompt(self, prompt: str) -> str:
         """Preprocess prompt for provider-specific optimization."""
-        # FIX: Restored prompt validation for robustness (fixes loss of validation)
         if not prompt or not isinstance(prompt, str):
             self.logger.error("Invalid prompt", prompt_type=type(prompt))
             raise ValueError("Prompt must be a non-empty string")
@@ -328,7 +410,7 @@ class EnhancedAsyncLLMClient(LLMClientInterface):
         return base_payload
 
     def _process_response(self, json_resp: Dict, response_format: Optional[ResponseFormat]) -> Any:
-        """Process provider-specific response."""
+        """Process provider-specific response with industry-standard JSON parsing only."""
         if self.provider in ["groq", "openai"]:
             choices = json_resp.get("choices", [])
             if not choices:
@@ -343,29 +425,223 @@ class EnhancedAsyncLLMClient(LLMClientInterface):
             content = str(json_resp)
 
         cleaned_content = self._scrub_pii(content)
+        
         if response_format == ResponseFormat.JSON:
-            try:
-                return json.loads(cleaned_content)
-            except json.JSONDecodeError as e:
-                self.logger.warning("Failed to parse JSON response", error=str(e))
-                return {"content": cleaned_content, "parse_error": True}
+            return self._parse_json_with_industry_libraries(cleaned_content)
         elif response_format == ResponseFormat.STRUCTURED:
-            try:
-                return json.loads(cleaned_content)
-            except json.JSONDecodeError:
-                return {"content": cleaned_content.strip()}
+            return self._parse_json_with_industry_libraries(cleaned_content)
+        
         return cleaned_content.strip()
+
+    def _parse_json_with_industry_libraries(self, content: str) -> Any:
+        """Parse JSON using ONLY industry-standard libraries with comprehensive fallback strategy."""
+        if not content or not content.strip():
+            self.logger.warning("Empty content for JSON parsing")
+            return {"error": "Empty response content", "content": content}
+        
+        content = content.strip()
+        self.logger.debug("Attempting JSON parsing", content_length=len(content), content_preview=content[:100])
+        
+        # Method 1: Standard JSON parsing (fastest path)
+        try:
+            parsed_data = json.loads(content)
+            self.logger.debug("Successfully parsed with standard JSON")
+            return parsed_data
+        except json.JSONDecodeError as e:
+            self.logger.debug(f"Standard JSON parsing failed: {e}")
+        
+        # Method 2: json-repair library (industry standard for malformed JSON)
+        if HAS_JSON_REPAIR:
+            try:
+                repaired_content = json_repair.repair_json(content)
+                parsed_data = json.loads(repaired_content)
+                self.logger.info("Successfully repaired JSON using json-repair library")
+                return parsed_data
+            except Exception as e:
+                self.logger.debug(f"json-repair library failed: {e}")
+        
+        # Method 3: json5 library (relaxed JSON parsing)
+        if HAS_JSON5:
+            try:
+                parsed_data = json5.loads(content)
+                self.logger.info("Successfully parsed JSON using json5 library")
+                return parsed_data
+            except Exception as e:
+                self.logger.debug(f"json5 library failed: {e}")
+        
+        # Method 4: demjson3 library (liberal JSON parsing)
+        if HAS_DEMJSON:
+            try:
+                parsed_data = demjson3.decode(content, strict=False)
+                self.logger.info("Successfully parsed JSON using demjson3 library")
+                return parsed_data
+            except Exception as e:
+                self.logger.debug(f"demjson3 library failed: {e}")
+        
+        # Method 5: Handle multiple JSON objects (jsonlines format)
+        if HAS_JSONLINES:
+            try:
+                # Try to parse as multiple JSON objects separated by newlines
+                objects = []
+                with jsonlines.Reader(io.StringIO(content)) as reader:
+                    for obj in reader:
+                        objects.append(obj)
+                
+                if len(objects) == 1:
+                    self.logger.info("Successfully parsed single JSON object using jsonlines library")
+                    return objects[0]
+                elif len(objects) > 1:
+                    self.logger.info(f"Successfully parsed {len(objects)} JSON objects using jsonlines library")
+                    return objects
+            except Exception as e:
+                self.logger.debug(f"jsonlines library failed: {e}")
+        
+        # Method 6: Handle "Extra data" errors with industry-standard JSONDecoder
+        # Use incremental parsing to extract the first valid JSON object
+        try:
+            decoder = json.JSONDecoder()
+            obj, end_idx = decoder.raw_decode(content, 0)
+            # Check if there's extra data after the first valid JSON
+            remaining = content[end_idx:].strip()
+            if remaining:
+                self.logger.info(f"Successfully extracted first JSON object, ignoring extra data: {remaining[:50]}...")
+            else:
+                self.logger.info("Successfully parsed complete JSON object using JSONDecoder")
+            return obj
+        except json.JSONDecodeError as e:
+            self.logger.debug(f"JSONDecoder direct parsing failed: {e}")
+        
+        # Method 7: Advanced concatenated JSON handling with enhanced error recovery
+        # Try to find and extract the first complete JSON object from mixed content
+        if content.count('{') > 0:
+            try:
+                decoder = json.JSONDecoder()
+                idx = 0
+                attempts = 0
+                max_attempts = 5
+                
+                while idx < len(content) and attempts < max_attempts:
+                    attempts += 1
+                    try:
+                        # Skip non-JSON characters
+                        while idx < len(content) and content[idx] not in '{[':
+                            idx += 1
+                        
+                        if idx >= len(content):
+                            break
+                            
+                        obj, end_idx = decoder.raw_decode(content, idx)
+                        self.logger.info(f"Successfully extracted JSON object from concatenated content (attempt {attempts})")
+                        return obj
+                    except json.JSONDecodeError as e:
+                        self.logger.debug(f"JSONDecoder attempt {attempts} failed at position {idx}: {e}")
+                        # Try to find the next potential JSON start
+                        next_brace = content.find('{', idx + 1)
+                        next_bracket = content.find('[', idx + 1)
+                        
+                        next_start = -1
+                        if next_brace != -1 and next_bracket != -1:
+                            next_start = min(next_brace, next_bracket)
+                        elif next_brace != -1:
+                            next_start = next_brace
+                        elif next_bracket != -1:
+                            next_start = next_bracket
+                            
+                        if next_start == -1:
+                            break
+                        idx = next_start
+            except Exception as e:
+                self.logger.debug(f"Advanced JSONDecoder extraction failed: {e}")
+        
+        # Method 10: Last resort - intelligent content truncation
+        try:
+            # Find the longest valid JSON substring
+            for end_pos in range(len(content), 0, -1):
+                test_content = content[:end_pos].rstrip()
+                if test_content.endswith(('}', ']')):
+                    try:
+                        parsed_data = json.loads(test_content)
+                        self.logger.info(f"Successfully parsed JSON after intelligent truncation (length: {end_pos})")
+                        return parsed_data
+                    except json.JSONDecodeError:
+                        continue
+                        
+        except Exception as e:
+            self.logger.debug(f"Intelligent truncation failed: {e}")
+        
+        lines = content.split('\n')
+        for i, line in enumerate(lines):
+            line = line.strip()
+            if line and (line.startswith('{') or line.startswith('[')):
+                try:
+                    obj = json.loads(line)
+                    self.logger.info(f"Successfully parsed JSON from line {i+1}")
+                    return obj
+                except json.JSONDecodeError:
+                    continue
+        
+        # Final fallback: Return comprehensive structured error with diagnostic information
+        available_libs = {
+            "json_repair": HAS_JSON_REPAIR,
+            "json5": HAS_JSON5,
+            "demjson3": HAS_DEMJSON,
+            "jsonlines": HAS_JSONLINES
+        }
+        
+        self.logger.error("All industry-standard JSON parsing methods exhausted", 
+                         content_preview=content[:200],
+                         content_length=len(content),
+                         available_libraries=available_libs)
+        
+        return {
+            "error": "JSON parsing failed - all industry-standard methods exhausted",
+            "content": content,
+            "available_libraries": available_libs,
+            "parsing_methods_attempted": [
+                "json.loads() - Standard JSON parsing",
+                "json_repair.repair_json() - Malformed JSON repair" if HAS_JSON_REPAIR else None,
+                "json5.loads() - Relaxed JSON parsing" if HAS_JSON5 else None,
+                "demjson3.decode() - Liberal JSON parsing" if HAS_DEMJSON else None,
+                "jsonlines.Reader() - Multiple JSON objects" if HAS_JSONLINES else None,
+                "json.JSONDecoder.raw_decode() - Incremental parsing with 'Extra data' handling",
+                "Advanced JSONDecoder - Multi-attempt extraction with error recovery", 
+                "Intelligent content truncation - Find longest valid JSON substring"
+            ],
+            "error_patterns_handled": [
+                "Extra data: line X column Y",
+                "Expecting value: line X column Y", 
+                "Trailing commas in objects/arrays",
+                "Missing quotes around keys",
+                "Single quotes instead of double quotes",
+                "Missing values (replaced with null)",
+                "JSON within code blocks or markdown",
+                "Concatenated JSON objects",
+                "Truncated JSON responses"
+            ],
+            "suggestion": "Install missing libraries: pip install json-repair json5 demjson3 jsonlines"
+        }
 
     def _should_retry(self, exception: BaseException | None) -> bool:
         """Determine if exception should trigger retry."""
-        # FIX: Updated param to Optional[BaseException], handled None, and narrowed to Exception (fixes type for BaseException | None to Exception at Line 391)
         if exception is None:
             return False
-        if isinstance(exception, Exception):  # Narrow to Exception
-            if isinstance(exception, tuple(self.retry_on_exceptions)):
-                return True
-            if isinstance(exception, ValueError) and any(str(code) in str(exception).lower() for code in self.retry_on_status_codes):
-                return True
+        if not isinstance(exception, Exception):
+            return False
+            
+        # Check for specific retryable exception types
+        if isinstance(exception, tuple(self.retry_on_exceptions)):
+            self.logger.info("Retrying due to exception type", 
+                           exception_type=type(exception).__name__, error=str(exception))
+            return True
+            
+        # Check for HTTP status codes that should trigger retry
+        if isinstance(exception, ValueError):
+            for code in self.retry_on_status_codes:
+                if str(code) in str(exception):
+                    self.logger.info("Retrying due to HTTP status code", 
+                                   status_code=code, error=str(exception))
+                    return True
+        
         return False
 
     def _update_metrics(self, success: bool, latency: float, response_size: int):
@@ -533,7 +809,6 @@ class EnhancedAsyncLLMClient(LLMClientInterface):
         self.metrics = LLMMetrics()
         self.logger.info("LLM metrics reset")
 
-    # FIX: Added validate_kwargs implementation to check provider-specific settings
     def validate_kwargs(self, provider: str, **kwargs: LLMProviderSettings) -> None:
         """Validate provider-specific settings passed via **kwargs."""
         if provider != self.provider:

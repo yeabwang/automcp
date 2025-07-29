@@ -1,1 +1,90 @@
-[]
+[
+  {
+    "name": "Search",
+    "description": "AWS CloudSearch Search operation",
+    "method": "GET",
+    "path": "/2013-01-01/search",
+    "safety_level": "safe",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "cursor": {
+          "type": "string",
+          "description": "API parameter cursor"
+        },
+        "expr": {
+          "type": "string",
+          "description": "API parameter expr"
+        },
+        "facet": {
+          "type": "string",
+          "description": "API parameter facet"
+        },
+        "fq": {
+          "type": "string",
+          "description": "API parameter fq"
+        },
+        "highlight": {
+          "type": "string",
+          "description": "API parameter highlight"
+        },
+        "partial": {
+          "type": "boolean",
+          "description": "API parameter partial"
+        },
+        "q": {
+          "type": "string",
+          "description": "API parameter q"
+        },
+        "q.options": {
+          "type": "string",
+          "description": "API parameter q.options"
+        },
+        "q.parser": {
+          "type": "string",
+          "description": "API parameter q.parser"
+        },
+        "return": {
+          "type": "string",
+          "description": "API parameter return"
+        },
+        "size": {
+          "type": "integer",
+          "description": "Specifies the maximum number of search hits to include in the response. "
+        },
+        "sort": {
+          "type": "string",
+          "description": "API parameter sort"
+        },
+        "start": {
+          "type": "integer",
+          "description": "API parameter start"
+        },
+        "stats": {
+          "type": "string",
+          "description": "API parameter stats"
+        },
+        "format": {
+          "type": "string",
+          "description": "API parameter format"
+        },
+        "pretty": {
+          "type": "string",
+          "description": "API parameter pretty"
+        }
+      },
+      "required": [
+        "q",
+        "format",
+        "pretty"
+      ]
+    },
+    "metadata": {
+      "complexity": "moderate",
+      "confidence": 0.95,
+      "parameter_count": 10,
+      "aws_service": "cloudsearch",
+      "actual_parameters": 16
+    }
+  }
+]

@@ -1,1 +1,102 @@
-[]
+[
+  {
+    "name": "search_semantic_intent",
+    "details": {
+      "summary": "Return search results based on the provided query.",
+      "complexity": "simple",
+      "user_context": "authenticated_user",
+      "domain": "search",
+      "business_context": "AWS CloudSearch search operation"
+    },
+    "confidence": 0.95,
+    "paths": [
+      {
+        "method": "GET",
+        "endpoint": "/2013-01-01/search#format=sdk&pretty=true&q",
+        "description": "Search for documents in the domain."
+      }
+    ],
+    "requirements": {
+      "authentication": [
+        {
+          "type": "aws_signature",
+          "required": true,
+          "description": "AWS Signature Version 4 authentication required."
+        }
+      ],
+      "permissions": [
+        {
+          "level": "white",
+          "action": "intent_name",
+          "description": "Intent name permission required for this operation."
+        }
+      ]
+    }
+  },
+  {
+    "name": "get_suggest",
+    "details": {
+      "summary": "Returns a list of suggested search terms based on the query string.",
+      "complexity": "simple",
+      "user_context": "authenticated_user",
+      "domain": "search",
+      "business_context": "AWS CloudSearch suggest operation"
+    },
+    "confidence": 0.95,
+    "paths": [
+      {
+        "method": "GET",
+        "endpoint": "/2013-01-01/suggest#format=sdk&pretty=true&q&suggester"
+      }
+    ],
+    "requirements": {
+      "authentication": [
+        {
+          "type": "aws_signature",
+          "required": true
+        }
+      ],
+      "permissions": [
+        {
+          "level": "white",
+          "action": "intent_name"
+        }
+      ]
+    }
+  },
+  {
+    "name": "UploadDocuments",
+    "details": {
+      "summary": "Uploads a batch of documents to the search domain.",
+      "complexity": "moderate",
+      "user_context": "authenticated_user",
+      "domain": "search",
+      "business_context": "AWS CloudSearch operation"
+    },
+    "confidence": 0.95,
+    "paths": [
+      {
+        "method": "POST",
+        "endpoint": "/2013-01-01/documents/batch",
+        "parameters": {
+          "format": "sdk",
+          "Content-Type": "application/json"
+        }
+      }
+    ],
+    "requirements": {
+      "authentication": [
+        {
+          "type": "aws_signature",
+          "required": true
+        }
+      ],
+      "permissions": [
+        {
+          "level": "grey",
+          "action": "intent_name"
+        }
+      ]
+    }
+  }
+]

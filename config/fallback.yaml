@@ -1,0 +1,62 @@
+# AutoMCP Fallback Configuration for Network Issues
+# This config provides multiple LLM providers as fallbacks
+
+environment: "fallback"
+
+llm_client:
+  # Primary provider
+  provider: "groq"
+  
+  # Fallback providers in order of preference
+  fallback_providers: ["openai", "anthropic"]
+  
+  # Enhanced retry settings for network issues
+  provider_settings:
+    groq:
+      max_tokens: 2000
+      temperature: 0.1
+      batch_size_limit: 5  # Smaller batches for reliability
+      optimal_batch_size: 2
+      retry_wait_min: 5
+      retry_wait_max: 60
+      retry_multiplier: 2
+      
+    openai:
+      max_tokens: 2000
+      temperature: 0.1
+      batch_size_limit: 5
+      optimal_batch_size: 2
+      
+    anthropic:
+      max_tokens: 2000
+      temperature: 0.1
+      batch_size_limit: 3
+      optimal_batch_size: 1
+
+# Enhanced error handling
+error_handling:
+  max_retries: 7
+  retry_delay: 2.0
+  exponential_backoff: true
+  
+  circuit_breaker:
+    failure_threshold: 3
+    recovery_timeout: 120
+    
+  retry_on_status_codes: [429, 500, 502, 503, 504, 520, 521, 522, 523, 524]
+
+# Conservative timeouts
+timeouts:
+  llm_query: 120
+  session_max_age: 1800
+
+# Reduced batch processing for stability
+enrichment:
+  batch_size: 2
+  concurrency_limit: 4
+  processing_timeout: 600
+
+# Debug logging
+logging:
+  level: "debug"
+  enable_network_debug: true
