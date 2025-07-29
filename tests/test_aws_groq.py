@@ -4,6 +4,7 @@ Process AWS CloudSearch API with Groq LLM
 """
 
 import json
+import os
 import yaml
 import requests
 from pathlib import Path
@@ -15,7 +16,8 @@ def process_aws_with_groq():
     print("=" * 60)
     
     # Groq configuration
-    groq_api_key = "REDACTED_GROQ_KEY"
+    # Use environment variable for API key
+    groq_api_key = os.getenv("GROQ_API_KEY", "your-api-key-here")
     groq_model = "llama3-70b-8192"
     groq_url = "https://api.groq.com/openai/v1/chat/completions"
     
