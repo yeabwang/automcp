@@ -212,7 +212,7 @@ def get_llm_config() -> Dict[str, Any]:
 def get_api_key() -> str:
     """Get LLM API key"""
     config = get_config()
-    api_key = config.get('llm.api_key')
+    api_key = config.get('llm_client.api_key')
     if not api_key:
         raise ValueError("LLM API key not configured. Set AUTOMCP_LLM_API_KEY environment variable or configure in config files.")
     return api_key
@@ -220,12 +220,12 @@ def get_api_key() -> str:
 def get_model() -> str:
     """Get LLM model name"""
     config = get_config()
-    return config.get('llm.model', 'llama-3.1-8b-instant')
+    return config.get('llm_client.model', 'llama-3.1-8b-instant')
 
 def get_endpoint() -> str:
     """Get LLM API endpoint"""
     config = get_config()
-    provider = config.get('llm.provider', 'groq')
+    provider = config.get('llm_client.provider', 'groq')
     
     endpoints = {
         'groq': 'https://api.groq.com/openai/v1/chat/completions',
@@ -233,7 +233,7 @@ def get_endpoint() -> str:
         'anthropic': 'https://api.anthropic.com/v1/messages'
     }
     
-    return config.get('llm.endpoint') or endpoints.get(provider, endpoints['groq'])
+    return config.get('llm_client.endpoint') or endpoints.get(provider, endpoints['groq'])
 
 def get_output_dir() -> Path:
     """Get output directory"""
@@ -259,8 +259,8 @@ if __name__ == "__main__":
         try:
             config = loader.load_config(env)
             print(f"\n✅ {env.upper()} Configuration:")
-            print(f"   LLM Model: {config.get('llm.model', 'Not configured')}")
-            print(f"   API Key: {'✅ Configured' if config.get('llm.api_key') else '❌ Missing'}")
+            print(f"   LLM Model: {config.get('llm_client.model', 'Not configured')}")
+            print(f"   API Key: {'✅ Configured' if config.get('llm_client.api_key') else '❌ Missing'}")
             print(f"   Log Level: {config.get('logging.level', 'Not configured')}")
             print(f"   Output Dir: {config.get('output.dir', 'Not configured')}")
         except Exception as e:
