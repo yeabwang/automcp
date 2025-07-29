@@ -69,3 +69,7 @@ build/
 config/local.yaml
 config/custom.yaml
 config/.env.*
+REDACTED_GROQ_KEY
+replacements.txt
+clean_history.ps1
+.gitignore
