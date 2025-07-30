@@ -84,7 +84,8 @@
       "confidence": 0.95,
       "parameter_count": 10,
       "aws_service": "cloudsearch",
-      "actual_parameters": 16
+      "actual_parameters": 16,
+      "missed items": "user_context, domain, client_type"
     }
   }
 ]

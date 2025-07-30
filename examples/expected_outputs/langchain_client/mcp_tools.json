@@ -1,0 +1,198 @@
+[
+  {
+    "name": "search_documents",
+    "description": "Search and retrieve documents from CloudSearch domain for RAG and retrieval chains",
+    "method": "GET",
+    "path": "/2013-01-01/search",
+    "langchain_config": {
+      "tool_type": "retrieval",
+      "prompt_template": "Search for documents about '{query}' {context_hint}. Use appropriate filters and sorting to get the most relevant results.",
+      "examples": [
+        "search_documents(query='machine learning algorithms', size=5)",
+        "search_documents(query='cloud computing', fq='category:technology', sort='_score desc')",
+        "search_documents(query='recent AI developments', start=0, size=10)"
+      ],
+      "chain_integration": {
+        "retrieval_qa": "Use as document retriever with query parameter from user question",
+        "conversational_retrieval": "Combine with conversation history for context-aware search",
+        "rag_chain": "Primary document source for context injection"
+      },
+      "reasoning_hints": [
+        "Adjust query based on conversation context",
+        "Use filters (fq) to narrow down results when domain is specified",
+        "Sort by relevance (_score desc) for most accurate results",
+        "Consider pagination (start, size) for large result sets"
+      ]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "description": "Search query derived from user intent - can be expanded with context",
+          "required": true,
+          "langchain_hint": "Extract key concepts from user message, expand with synonyms if needed"
+        },
+        "queryParser": {
+          "type": "string", 
+          "enum": ["simple", "structured", "lucene", "dismax"],
+          "default": "simple",
+          "langchain_hint": "Use 'simple' for natural language, 'structured' for field-specific queries"
+        },
+        "size": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 500,
+          "default": 10,
+          "langchain_hint": "Adjust based on chain requirements - use 3-5 for QA, 10+ for exploration"
+        },
+        "fq": {
+          "type": "string",
+          "langchain_hint": "Add filters based on conversation context or user preferences"
+        },
+        "sort": {
+          "type": "string",
+          "default": "_score desc",
+          "langchain_hint": "Use '_score desc' for relevance, 'date desc' for recency"
+        }
+      },
+      "required": ["query"]
+    },
+    "output_processing": {
+      "langchain_format": "Extract 'hit' array from response, focus on 'fields' content for document text",
+      "context_extraction": "Combine title, content, and metadata for comprehensive context",
+      "error_handling": "Return empty results gracefully, log search issues for debugging"
+    },
+    "rate_limits": {
+      "requests_per_minute": 1000,
+      "burst_limit": 100,
+      "langchain_note": "Safe for high-frequency chain operations"
+    }
+  },
+  {
+    "name": "get_suggestions",
+    "description": "Generate intelligent search suggestions for query refinement and content discovery",
+    "method": "GET", 
+    "path": "/2013-01-01/suggest",
+    "langchain_config": {
+      "tool_type": "assistance",
+      "prompt_template": "Help improve the search by suggesting completions for '{partial_query}'. Consider user intent and available content.",
+      "examples": [
+        "get_suggestions(q='machine', suggester='content-suggester')",
+        "get_suggestions(q='cloud comp', suggester='tech-suggester', size=5)",
+        "get_suggestions(q='', suggester='popular-terms', size=10)"
+      ],
+      "chain_integration": {
+        "query_refinement": "Use when user query seems incomplete or unclear",
+        "conversation_flow": "Offer suggestions as conversation options to guide user",
+        "exploration_mode": "Help users discover available content categories"
+      },
+      "reasoning_hints": [
+        "Use when user query is very short (< 3 words)",
+        "Helpful for disambiguation when search returns no results",
+        "Can suggest related terms to expand search scope"
+      ]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "q": {
+          "type": "string",
+          "description": "Partial query or empty string for popular suggestions",
+          "required": true,
+          "langchain_hint": "Extract incomplete part of user query or use empty string for exploration"
+        },
+        "suggester": {
+          "type": "string",
+          "description": "Suggester name - should be configured in CloudSearch domain",
+          "required": true,
+          "langchain_hint": "Use domain-specific suggester if available, fallback to general suggester"
+        },
+        "size": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 5,
+          "langchain_hint": "Use 3-5 for completion, 8-10 for exploration"
+        }
+      },
+      "required": ["q", "suggester"]
+    },
+    "output_processing": {
+      "langchain_format": "Extract suggestions array, present as options to user or use for query expansion",
+      "conversation_integration": "Format as 'Did you mean...' or 'You might be looking for...'",
+      "error_handling": "Gracefully handle missing suggester, provide fallback options"
+    },
+    "rate_limits": {
+      "requests_per_minute": 2000,
+      "burst_limit": 200,
+      "langchain_note": "Very safe for interactive suggestion flows"
+    }
+  },
+  {
+    "name": "upload_documents",
+    "description": "Upload and index documents with validation - requires human confirmation in autonomous chains",
+    "method": "POST",
+    "path": "/2013-01-01/documents/batch",
+    "langchain_config": {
+      "tool_type": "modification",
+      "prompt_template": "Upload documents to search index after validation: {document_summary}. Confirm this will {operation_type} {document_count} documents.",
+      "examples": [
+        "upload_documents(documents=validated_batch, content_type='application/json')",
+        "upload_documents(documents=product_data, content_type='application/json')"
+      ],
+      "chain_integration": {
+        "data_ingestion": "Use in document processing pipelines with validation steps",
+        "content_management": "Part of larger content update workflows",
+        "batch_processing": "Handle large document sets with proper error recovery"
+      },
+      "safety_requirements": {
+        "human_confirmation": true,
+        "input_validation": true,
+        "error_recovery": true,
+        "audit_logging": true
+      },
+      "reasoning_hints": [
+        "Always validate document format before upload",
+        "Confirm operation with user before execution",
+        "Handle partial failures gracefully",
+        "Provide detailed status feedback"
+      ]
+    },
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "documents": {
+          "type": "string",
+          "description": "JSON formatted batch of documents with proper CloudSearch structure",
+          "required": true,
+          "langchain_hint": "Validate document structure matches CloudSearch requirements before upload"
+        },
+        "content_type": {
+          "type": "string",
+          "enum": ["application/json", "application/xml"],
+          "default": "application/json",
+          "langchain_hint": "Use JSON for structured data, XML for document-based content"
+        }
+      },
+      "required": ["documents", "content_type"]
+    },
+    "output_processing": {
+      "langchain_format": "Parse upload status, check for errors, provide detailed feedback to user",
+      "success_handling": "Confirm successful uploads, report document counts",
+      "error_handling": "Extract error details, suggest corrective actions, support retry logic"
+    },
+    "pre_execution_checks": [
+      "validate_document_format",
+      "check_user_permissions", 
+      "confirm_with_human",
+      "backup_existing_data"
+    ],
+    "rate_limits": {
+      "requests_per_minute": 100,
+      "burst_limit": 10,
+      "batch_size_limit": "5MB",
+      "langchain_note": "Use carefully, requires confirmation for autonomous execution"
+    }
+  }
+]

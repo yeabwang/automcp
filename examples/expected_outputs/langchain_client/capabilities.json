@@ -1,0 +1,52 @@
+{
+  "white": {
+    "operations": [
+      "SearchDocuments",
+      "GetSuggestions"
+    ],
+    "description": "Safe read-only operations with no side effects - ideal for information gathering chains",
+    "characteristics": ["no_data_modification", "cacheable", "high_rate_limit", "chain_friendly"],
+    "langchain_context": {
+      "reasoning": "These operations are safe for autonomous agent execution in multi-step chains",
+      "memory_safe": true,
+      "can_retry": true,
+      "output_deterministic": false
+    }
+  },
+  "grey": {
+    "operations": [
+      "UploadDocuments"
+    ],
+    "description": "Moderate operations that modify data - require explicit user confirmation in chains",
+    "characteristics": ["data_modification", "reversible", "requires_auth", "rate_limited"],
+    "langchain_context": {
+      "reasoning": "These operations change system state and should include human-in-the-loop confirmation",
+      "memory_safe": false,
+      "requires_confirmation": true,
+      "can_retry": false
+    }
+  },
+  "black": {
+    "operations": [],
+    "description": "Dangerous operations - never allow in autonomous chains",
+    "characteristics": ["irreversible", "system_impact", "security_sensitive"],
+    "langchain_context": {
+      "reasoning": "These operations are too dangerous for autonomous execution",
+      "memory_safe": false,
+      "requires_confirmation": false,
+      "autonomous_allowed": false
+    }
+  },
+  "metadata": {
+    "total_operations": 3,
+    "aws_service": "cloudsearch",
+    "processing_timestamp": 1753773946.5486987,
+    "framework_version": "1.0.0",
+    "client_type": "langchain",
+    "chain_compatibility": {
+      "retrieval_chains": ["SearchDocuments"],
+      "suggestion_chains": ["GetSuggestions"],
+      "modification_chains": ["UploadDocuments"]
+    }
+  }
+}

@@ -1,0 +1,146 @@
+[
+  {
+    "name": "SearchDocuments",
+    "details": {
+      "summary": "Search and retrieve documents from CloudSearch domain using natural language queries",
+      "complexity": "simple",
+      "user_context": "authenticated_user",
+      "domain": "search",
+      "business_context": "Core retrieval functionality for RAG chains and document-based reasoning",
+      "user_intent": "retrieve information",
+      "langchain_specifics": {
+        "chain_type": "retrieval",
+        "prompt_template": "Search the document collection for information about '{query}'. {additional_context}",
+        "reasoning_hint": "This tool helps find relevant documents that can answer user questions or provide context for further reasoning",
+        "output_processing": "Parse results and extract relevant text snippets for context injection",
+        "integration_patterns": ["RetrievalQA", "ConversationalRetrievalChain", "RAGChain"]
+      },
+      "examples": [
+        {
+          "user_says": "Find documents about machine learning",
+          "chain_context": "User is asking for information, need to retrieve relevant documents",
+          "langchain_call": "search_documents(query='machine learning', size=10)",
+          "reasoning": "Search for ML documents to provide comprehensive information to the user"
+        },
+        {
+          "user_says": "What do we know about artificial intelligence trends?",
+          "chain_context": "Question requires knowledge retrieval and synthesis",
+          "langchain_call": "search_documents(query='artificial intelligence trends', fq='date:[2023-01-01,}', sort='_score desc')",
+          "reasoning": "Retrieve recent AI trend documents to provide current insights"
+        }
+      ],
+      "triggers": ["find", "search", "look for", "get documents", "retrieve", "what do you know about"],
+      "context_clues": {
+        "information_seeking": ["what", "how", "why", "explain", "tell me about"],
+        "domain_indicators": ["documents", "articles", "papers", "research"],
+        "urgency_markers": ["recent", "latest", "current", "new"]
+      }
+    },
+    "confidence": 0.95,
+    "maps_to": {
+      "operation": "SearchDocuments",
+      "safety_level": "white",
+      "tool_name": "SearchDocuments",
+      "chain_safe": true
+    }
+  },
+  {
+    "name": "GetSuggestions", 
+    "details": {
+      "summary": "Generate intelligent search suggestions to guide user queries and improve search experience",
+      "complexity": "simple",
+      "user_context": "end_user",
+      "domain": "suggestions",
+      "business_context": "Query enhancement and user assistance in conversational flows",
+      "user_intent": "get assistance",
+      "langchain_specifics": {
+        "chain_type": "assistance",
+        "prompt_template": "Help the user by suggesting completions for '{partial_query}'. Provide relevant suggestions that would lead to useful results.",
+        "reasoning_hint": "Use this tool when user queries are incomplete or when you want to help them explore available content",
+        "output_processing": "Present suggestions in a user-friendly way, potentially as conversation options",
+        "integration_patterns": ["ConversationChain", "QueryRefinementChain", "InteractiveAgent"]
+      },
+      "examples": [
+        {
+          "user_says": "I'm looking for something about 'mach'...",
+          "chain_context": "User has incomplete query, needs assistance to find what they want",
+          "langchain_call": "get_suggestions(q='mach', suggester='content-suggester', size=5)",
+          "reasoning": "Help user complete their search by showing relevant suggestions"
+        },
+        {
+          "user_says": "What can I search for in this system?",
+          "chain_context": "User wants to explore available content",
+          "langchain_call": "get_suggestions(q='', suggester='popular-suggester', size=10)",
+          "reasoning": "Show popular search terms to help user discover content"
+        }
+      ],
+      "triggers": ["suggest", "help me find", "what can I search", "complete", "assist", "guide me"],
+      "context_clues": {
+        "assistance_seeking": ["help", "guide", "suggest", "recommend"],
+        "exploration_intent": ["what's available", "show me options", "explore"],
+        "completion_needed": ["starting with", "begins with", "partial"]
+      }
+    },
+    "confidence": 0.95,
+    "maps_to": {
+      "operation": "GetSuggestions",
+      "safety_level": "white", 
+      "tool_name": "GetSuggestions",
+      "chain_safe": true
+    }
+  },
+  {
+    "name": "UploadDocuments",
+    "details": {
+      "summary": "Upload and index documents to make them searchable - requires careful validation in automated chains",
+      "complexity": "moderate",
+      "user_context": "developer",
+      "domain": "indexing", 
+      "business_context": "Data ingestion workflow with validation and error handling requirements",
+      "user_intent": "modify data",
+      "langchain_specifics": {
+        "chain_type": "modification",
+        "prompt_template": "Process and upload documents to the search index. Validate content before indexing: '{documents}'. Confirm this operation will {operation_type} the specified documents.",
+        "reasoning_hint": "This tool changes system state. Always validate input and confirm with user before execution in autonomous chains",
+        "output_processing": "Check upload status and handle errors gracefully, provide detailed feedback to user",
+        "integration_patterns": ["DocumentProcessingChain", "ValidationChain", "DataIngestionPipeline"],
+        "safety_requirements": {
+          "requires_confirmation": true,
+          "validate_input": true,
+          "error_recovery": true,
+          "rollback_capable": false
+        }
+      },
+      "examples": [
+        {
+          "user_says": "Upload these product documents to the search index",
+          "chain_context": "User wants to add content, requires validation and confirmation",
+          "langchain_call": "upload_documents(documents=validated_docs, content_type='application/json')",
+          "reasoning": "After validating document format and confirming with user, proceed with upload",
+          "pre_execution": ["validate_document_format", "confirm_with_user", "check_permissions"]
+        },
+        {
+          "user_says": "Add this content to make it searchable",
+          "chain_context": "Data modification request, need to ensure proper formatting",
+          "langchain_call": "upload_documents(documents=formatted_content, content_type='application/json')",
+          "reasoning": "Format content appropriately and upload after validation",
+          "pre_execution": ["format_content", "validate_schema", "get_confirmation"]
+        }
+      ],
+      "triggers": ["upload", "add documents", "index", "make searchable", "ingest data"],
+      "context_clues": {
+        "data_modification": ["upload", "add", "insert", "update", "modify"],
+        "content_indicators": ["documents", "files", "data", "content"],
+        "urgency_markers": ["now", "immediately", "urgent"]
+      }
+    },
+    "confidence": 0.95,
+    "maps_to": {
+      "operation": "UploadDocuments",
+      "safety_level": "grey",
+      "tool_name": "UploadDocuments",
+      "chain_safe": false,
+      "requires_human_confirmation": true
+    }
+  }
+]

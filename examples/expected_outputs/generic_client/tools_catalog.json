@@ -1,0 +1,73 @@
+{
+  "catalog_info": {
+    "service": "aws_cloudsearch",
+    "version": "2013-01-01",
+    "generated_at": "2025-01-29T10:00:00Z",
+    "total_tools": 3,
+     "supported_client_types": ["langchain", "fastmcp", "openai", "llamaindex", "autogen", "generic"],
+    "current_client_type": "generic"
+  },
+  "tools": [
+    {
+      "id": "search_documents",
+      "name": "Document Search",
+      "description": "Find documents that match your search criteria",
+      "category": "search",
+      "safety_level": "safe",
+      "typical_use": "When users want to find, search, or lookup documents",
+      "examples": [
+        "Find documents about machine learning",
+        "Search for recent articles on AI",
+        "Look up documents containing specific keywords"
+      ],
+      "parameters": {
+        "required": ["search_query"],
+        "optional": ["result_limit", "sort_order", "filters"]
+      },
+      "response_type": "document_list"
+    },
+    {
+      "id": "get_suggestions", 
+      "name": "Search Suggestions",
+      "description": "Get autocomplete suggestions for partial search queries",
+      "category": "assistance",
+      "safety_level": "safe",
+      "typical_use": "When users are typing and need search suggestions",
+      "examples": [
+        "Get suggestions for 'mach'",
+        "Help complete the search term 'artif'",
+        "Show possible searches starting with 'cloud'"
+      ],
+      "parameters": {
+        "required": ["partial_query", "suggester_name"],
+        "optional": ["max_suggestions"]
+      },
+      "response_type": "suggestion_list"
+    },
+    {
+      "id": "upload_documents",
+      "name": "Document Upload", 
+      "description": "Add or update documents in the search index",
+      "category": "data_management",
+      "safety_level": "moderate",
+      "typical_use": "When users need to add, update, or manage searchable content",
+      "examples": [
+        "Upload product information to search index",
+        "Add new articles to the document collection",
+        "Update existing document content"
+      ],
+      "parameters": {
+        "required": ["documents", "content_type"],
+        "optional": ["batch_options"]
+      },
+      "response_type": "upload_status"
+    }
+  ],
+  "usage_guidelines": {
+    "safe_operations": ["search_documents", "get_suggestions"],
+    "moderate_operations": ["upload_documents"],
+    "dangerous_operations": [],
+    "authentication_required": true,
+    "rate_limiting": "varies_by_operation"
+  }
+}

@@ -1,0 +1,132 @@
+{
+  "catalog_info": {
+    "service": "aws_cloudsearch",
+    "version": "2013-01-01",
+    "generated_at": "2025-01-29T10:00:00Z",
+    "total_tools": 3,
+    "supported_client_types": ["langchain", "fastmcp", "openai", "llamaindex", "autogen", "generic"],
+    "current_client_type": "langchain",
+    "langchain_specifics": {
+      "chain_compatibility": "All tools designed for LangChain agent integration",
+      "reasoning_support": "Enhanced with prompt templates and reasoning hints",
+      "safety_model": "Human-in-the-loop for data modification operations"
+    }
+  },
+  "tools": [
+    {
+      "id": "search_documents",
+      "name": "Document Search & Retrieval",
+      "description": "Find and retrieve relevant documents for answering questions and providing context",
+      "category": "information_retrieval",
+      "safety_level": "safe",
+      "langchain_context": {
+        "best_for": "RAG chains, Q&A systems, research assistance",
+        "chain_types": ["RetrievalQA", "ConversationalRetrievalChain", "RAGChain"],
+        "autonomous_safe": true,
+        "reasoning_required": "Minimal - straightforward retrieval operation"
+      },
+      "typical_use": "When users ask questions that require information from documents",
+      "examples": [
+        "User: 'What do you know about machine learning?' → Search documents about ML",
+        "User: 'Find recent research on AI' → Search with date filters for AI research",
+        "User: 'Explain quantum computing' → Retrieve quantum computing documents for context"
+      ],
+      "parameters": {
+        "required": ["search_query"],
+        "optional": ["result_limit", "filters", "sort_preference"],
+        "langchain_hints": "Query can be enhanced with conversation context"
+      },
+      "response_type": "document_list_with_relevance",
+      "conversation_flow": {
+        "user_says": "Question requiring information",
+        "agent_thinks": "Need to search for relevant documents",
+        "agent_calls": "search_documents(query=extracted_concepts)",
+        "agent_responds": "Answer based on retrieved documents"
+      }
+    },
+    {
+      "id": "get_suggestions", 
+      "name": "Search Assistance & Suggestions",
+      "description": "Help users refine their queries and discover available content",
+      "category": "user_assistance",
+      "safety_level": "safe",
+      "langchain_context": {
+        "best_for": "Interactive conversations, query refinement, content discovery",
+        "chain_types": ["ConversationChain", "InteractiveAgent", "QueryRefinementChain"],
+        "autonomous_safe": true,
+        "reasoning_required": "Moderate - interpret user intent for suggestions"
+      },
+      "typical_use": "When user queries are unclear, incomplete, or when helping them explore",
+      "examples": [
+        "User: 'I'm looking for something about mach...' → Get suggestions for 'mach'",
+        "User: 'What can I search for here?' → Show popular search terms",
+        "User: 'artificial int' → Complete to 'artificial intelligence'"
+      ],
+      "parameters": {
+        "required": ["partial_query", "suggester_type"],
+        "optional": ["max_suggestions"],
+        "langchain_hints": "Use conversation context to guide suggestion selection"
+      },
+      "response_type": "suggestion_list",
+      "conversation_flow": {
+        "user_says": "Incomplete or exploratory query",
+        "agent_thinks": "User needs help completing their search",
+        "agent_calls": "get_suggestions(q=partial_text)",
+        "agent_responds": "Here are some suggestions to help you find what you're looking for"
+      }
+    },
+    {
+      "id": "upload_documents",
+      "name": "Document Upload & Indexing", 
+      "description": "Add or update documents in the search index (requires confirmation)",
+      "category": "data_management",
+      "safety_level": "moderate",
+      "langchain_context": {
+        "best_for": "Content management workflows, data ingestion pipelines",
+        "chain_types": ["DocumentProcessingChain", "ValidationChain", "HumanInTheLoopChain"],
+        "autonomous_safe": false,
+        "reasoning_required": "High - validate content and confirm with user",
+        "requires_confirmation": true
+      },
+      "typical_use": "When users need to add content to make it searchable (careful validation required)",
+      "examples": [
+        "User: 'Add these documents to the search' → Validate and confirm before upload",
+        "User: 'Make this content searchable' → Process and index with user approval",
+        "User: 'Update the document collection' → Careful validation and confirmation"
+      ],
+      "parameters": {
+        "required": ["documents", "content_type"],
+        "optional": ["validation_options"],
+        "langchain_hints": "Always validate format and confirm with user before execution"
+      },
+      "response_type": "upload_status_with_details",
+      "conversation_flow": {
+        "user_says": "Request to add/update documents",
+        "agent_thinks": "This modifies data - need validation and confirmation",
+        "agent_validates": "Check document format and permissions",
+        "agent_asks": "Confirm you want to upload X documents?",
+        "user_confirms": "Yes, proceed",
+        "agent_calls": "upload_documents(validated_documents)",
+        "agent_responds": "Successfully uploaded X documents"
+      }
+    }
+  ],
+  "usage_guidelines": {
+    "langchain_best_practices": {
+      "autonomous_operations": ["search_documents", "get_suggestions"],
+      "confirmation_required": ["upload_documents"],
+      "chain_safe": "All read operations, validation required for write operations",
+      "error_handling": "Graceful fallbacks with user-friendly error messages"
+    },
+    "conversation_patterns": {
+      "information_seeking": "Use search_documents for factual questions",
+      "exploration": "Use get_suggestions to help users discover content", 
+      "content_management": "Use upload_documents with proper validation workflow"
+    },
+    "safety_model": {
+      "read_operations": "Fully autonomous execution allowed",
+      "write_operations": "Human confirmation required",
+      "error_recovery": "Built-in retry logic with user feedback"
+    }
+  }
+}

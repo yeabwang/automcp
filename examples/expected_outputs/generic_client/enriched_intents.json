@@ -1,0 +1,125 @@
+[
+  {
+    "name": "SearchDocuments",
+    "details": {
+      "summary": "User wants to find documents that match search criteria",
+      "complexity": "simple",
+      "user_context": "authenticated_user",
+      "domain": "search",
+      "business_context": "Core search functionality for document discovery",
+      "user_intent": "retrieve information",
+      "examples": [
+        {
+          "user_says": "Find documents about machine learning",
+          "intent_mapping": {
+            "action": "search",
+            "target": "documents", 
+            "query": "machine learning"
+          }
+        },
+        {
+          "user_says": "Search for recent AI articles",
+          "intent_mapping": {
+            "action": "search",
+            "target": "documents",
+            "query": "AI",
+            "filter": "recent"
+          }
+        }
+      ],
+      "triggers": ["find", "search", "look for", "get documents", "retrieve"],
+      "context_clues": {
+        "search_terms": ["machine learning", "AI", "artificial intelligence"],
+        "modifiers": ["recent", "latest", "new", "old"],
+        "result_preferences": ["top results", "most relevant", "popular"]
+      }
+    },
+    "confidence": 0.95,
+    "maps_to": {
+      "operation": "SearchDocuments",
+      "safety_level": "white",
+      "tool_name": "SearchDocuments"
+    }
+  },
+  {
+    "name": "GetSuggestions", 
+    "details": {
+      "summary": "User wants autocomplete suggestions while typing",
+      "complexity": "simple",
+      "user_context": "end_user",
+      "domain": "suggestions",
+      "business_context": "Search assistance and content discovery",
+      "user_intent": "get assistance",
+      "examples": [
+        {
+          "user_says": "Give me suggestions for 'mach'",
+          "intent_mapping": {
+            "action": "suggest",
+            "partial_query": "mach",
+            "help_type": "autocomplete"
+          }
+        },
+        {
+          "user_says": "What can I search for starting with 'art'?",
+          "intent_mapping": {
+            "action": "suggest",
+            "partial_query": "art",
+            "help_type": "discovery"
+          }
+        }
+      ],
+      "triggers": ["suggest", "autocomplete", "help me find", "what can I search", "complete"],
+      "context_clues": {
+        "partial_queries": ["partial text", "incomplete words"],
+        "intent_indicators": ["starting with", "begins with", "like"]
+      }
+    },
+    "confidence": 0.95,
+    "maps_to": {
+      "operation": "GetSuggestions",
+      "safety_level": "white", 
+      "tool_name": "GetSuggestions"
+    }
+  },
+  {
+    "name": "UploadDocuments",
+    "details": {
+      "summary": "User wants to add or update documents in the search index",
+      "complexity": "moderate",
+      "user_context": "developer",
+      "domain": "indexing", 
+      "business_context": "Data management and search index maintenance",
+      "user_intent": "modify data",
+      "examples": [
+        {
+          "user_says": "Upload these product documents to the search index",
+          "intent_mapping": {
+            "action": "upload",
+            "target": "documents",
+            "operation_type": "add"
+          }
+        },
+        {
+          "user_says": "Update the search index with new content",
+          "intent_mapping": {
+            "action": "upload",
+            "target": "index",
+            "operation_type": "update"
+          }
+        }
+      ],
+      "triggers": ["upload", "add documents", "index", "update search", "bulk insert"],
+      "context_clues": {
+        "data_indicators": ["documents", "files", "content", "data"],
+        "operation_types": ["add", "update", "delete", "bulk"],
+        "targets": ["search index", "domain", "collection"]
+      }
+    },
+    "confidence": 0.95,
+    "maps_to": {
+      "operation": "UploadDocuments",
+      "safety_level": "grey",
+      "tool_name": "UploadDocuments"
+    }
+  }
+]

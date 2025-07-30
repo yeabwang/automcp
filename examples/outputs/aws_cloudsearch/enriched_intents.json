@@ -1,6 +1,6 @@
 [
   {
-    "name": "search_semantic_intent",
+    "name": "search_semantic_intent -- to be fixed should be something like SearchDocuments",
     "details": {
       "summary": "Return search results based on the provided query.",
       "complexity": "simple",
@@ -27,7 +27,7 @@
       "permissions": [
         {
           "level": "white",
-          "action": "intent_name",
+          "action": "intent_name ---- to be fixed - SearchDocuments",
           "description": "Intent name permission required for this operation."
         }
       ]

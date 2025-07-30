@@ -1,0 +1,28 @@
+{
+  "white": {
+    "operations": [
+      "SearchDocuments",
+      "GetSuggestions"
+    ],
+    "description": "Safe read-only operations with no side effects",
+    "characteristics": ["no_data_modification", "cacheable", "high_rate_limit"]
+  },
+  "grey": {
+    "operations": [
+      "UploadDocuments"
+    ],
+    "description": "Moderate operations that modify data but are generally safe",
+    "characteristics": ["data_modification", "reversible", "requires_auth", "rate_limited"]
+  },
+  "black": {
+    "operations": [],
+    "description": "Dangerous operations that could cause data loss or security risks",
+    "characteristics": ["irreversible", "system_impact", "security_sensitive"]
+  },
+  "metadata": {
+    "total_operations": 3,
+    "aws_service": "cloudsearch",
+    "processing_timestamp": 1753773946.5486987,
+    "framework_version": "1.0.0"
+  }
+}
