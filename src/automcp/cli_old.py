@@ -7,6 +7,41 @@ Model Context Protocol (MCP) tools with semantic enrichment and enterprise valid
 """
 
 import os
+import json
+import yaml
+import asyncio
+import sys
+from pathlib import Path
+from typing import List, Dict, Optional, Any
+import click
+
+# Import AutoMCP core modules
+try:
+    from .config import load_config, get_config, list_environments as get_available_environments
+    from .core.async_llm_client import EnhancedAsyncLLMClient
+    from .core.llm_client_interface import ResponseFormat
+    from .core.parsers import extract_endpoints_from_spec
+    from .core.enricher import EnrichmentEngine
+    from .core.output_generator import OutputGenerator
+except ImportError:
+    # Fallback for running from root directory
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+    from src.automcp.config import load_config, get_config, list_environments as get_available_environments
+    from src.automcp.core.async_llm_client import EnhancedAsyncLLMClient
+    from src.automcp.core.llm_client_interface import ResponseFormat
+    from src.automcp.core.parsers import extract_endpoints_from_spec
+    from src.automcp.core.enricher import EnrichmentEngine
+    from src.automcp.core.output_generator import OutputGenerator
+
+#!/usr/bin/env python3
+"""
+AutoMCP CLI - Professional API to MCP Tool Converter
+
+A command-line interface for transforming API specifications into AI-agent-ready 
+Model Context Protocol (MCP) tools with semantic enrichment and enterprise validation.
+"""
+
+import os
 import sys
 import asyncio
 from pathlib import Path
@@ -618,6 +653,68 @@ def main():
         click.echo(f"Unexpected error: {e}", err=True)
         sys.exit(1)
 
+
+if __name__ == "__main__":
+    main()
+
+@click.group()
+@click.version_option(version="1.0.0", prog_name="AutoMCP")
+@click.option('--environment', '-e', 
+              type=click.Choice(['development', 'production', 'enterprise', 'fallback']), 
+              help="Configuration environment to use")
+@click.option('--verbose', '-v', is_flag=True, help="Enable verbose output")
+@click.pass_context
+def cli(ctx, environment, verbose):
+    """
+    🚀 AutoMCP - Intelligent API to MCP Tool Converter
+    
+    Transform API specifications into AI-agent-ready Model Context Protocol (MCP) tools
+    with semantic enrichment and industry-standard validation.
+    
+    \b
+    Examples:
+      automcp analyze api.yaml                    # Analyze with default environment
+      automcp analyze api.yaml -e production     # Use production configuration
+      automcp batch input/                       # Process all files in input/
+      automcp health                             # Check system health
+      automcp config show -e enterprise          # Show enterprise configuration
+    
+    \b
+    Supported Formats:
+      - OpenAPI 3.0/3.1 specifications (.yaml, .json)
+      - Swagger 2.0 specifications
+      - Postman Collections v2.1
+      - Python source code (via repository scanning)
+    
+    \b
+    Output Files:
+      - enriched_intents.json    # Semantic intent metadata
+      - capabilities.txt         # Permission-based capability classifications
+      - mcp_tools.json          # Complete MCP tool specifications
+    """
+    # Ensure context exists and store settings
+    ctx.ensure_object(dict)
+    ctx.obj['environment'] = environment
+    ctx.obj['verbose'] = verbose
+    
+    if verbose:
+        if environment:
+            print(f"🔧 Using environment: {environment}")
+        else:
+            print("🔧 Using default environment configuration")
+
+
+
+def main():
+    """Main entry point."""
+    try:
+        cli()
+    except KeyboardInterrupt:
+        print("\n⚠️  Operation cancelled by user")
+        sys.exit(130)
+    except Exception as e:
+        print(f"\n❌ Unexpected error: {e}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()

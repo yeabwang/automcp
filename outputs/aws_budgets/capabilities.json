@@ -1,0 +1,37 @@
+{
+  "white": {
+    "operations": [],
+    "description": "Safe read-only operations"
+  },
+  "grey": {
+    "operations": [
+      "CreateBudget",
+      "CreateBudgetAction",
+      "CreateNotification",
+      "CreateSubscriber",
+      "DeleteBudget",
+      "delete_budget_action",
+      "DeleteNotification",
+      "DeleteSubscriber",
+      "describe_budget_intent",
+      "DescribeBudgetAction",
+      "describe_budget_action_histories",
+      "describe_budget_actions_for_account",
+      "describe_budget_performance_history",
+      "DescribeSubscribersForNotification",
+      "ExecuteBudgetAction",
+      "UpdateBudgetAction"
+    ],
+    "description": "Moderate write operations"
+  },
+  "black": {
+    "operations": [],
+    "description": "Dangerous operations"
+  },
+  "metadata": {
+    "total_intents": 16,
+    "total_tools": 4,
+    "aws_service": "cloudsearch",
+    "processing_timestamp": 1754037249.9226687
+  }
+}

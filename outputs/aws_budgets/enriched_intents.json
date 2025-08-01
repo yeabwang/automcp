@@ -1,0 +1,540 @@
+[
+  {
+    "name": "CreateBudget",
+    "details": {
+      "summary": "Create a new budget for AWS CloudSearch",
+      "complexity": "moderate",
+      "user_context": "authenticated_user",
+      "domain": "AWS CloudSearch",
+      "business_context": "Budget management for AWS CloudSearch"
+    },
+    "confidence": 0.95,
+    "paths": [
+      {
+        "method": "POST",
+        "endpoint": "/#X-Amz-Target=AWSBudgetServiceGateway.CreateBudget"
+      }
+    ],
+    "requirements": {
+      "authentication": [
+        {
+          "type": "aws_signature",
+          "required": true
+        }
+      ],
+      "permissions": [
+        {
+          "level": "grey",
+          "action": "budget_management"
+        }
+      ]
+    },
+    "intent_type": "action",
+    "description": "Create a new budget for AWS CloudSearch, specifying the budget type, limit, and time period.",
+    "parameters": {
+      "budget_type": {
+        "type": "string",
+        "description": "The type of budget to create (e.g. cost, usage)"
+      },
+      "budget_limit": {
+        "type": "number",
+        "description": "The budget limit amount"
+      },
+      "time_period": {
+        "type": "string",
+        "description": "The time period for the budget (e.g. monthly, quarterly)"
+      }
+    },
+    "examples": [
+      {
+        "request": {
+          "budget_type": "cost",
+          "budget_limit": 100,
+          "time_period": "monthly"
+        },
+        "response": {
+          "budget_id": "budget-1234567890"
+        }
+      }
+    ]
+  },
+  {
+    "name": "CreateBudgetAction",
+    "details": {
+      "summary": "Create a new budget action in AWS Budgets",
+      "complexity": "moderate",
+      "user_context": "authenticated_user",
+      "domain": "budgets",
+      "business_context": "AWS Budgets operation"
+    },
+    "confidence": 0.95,
+    "paths": [
+      {
+        "method": "POST",
+        "endpoint": "/budgets/2023-01-01/budgets/123456789012/budget-actions"
+      }
+    ],
+    "requirements": {
+      "authentication": [
+        {
+          "type": "aws_signature",
+          "required": true
+        }
+      ],
+      "permissions": [
+        {
+          "level": "write",
+          "action": "budgets:CreateBudgetAction"
+        }
+      ]
+    }
+  },
+  {
+    "name": "CreateNotification",
+    "details": {
+      "summary": "Create a notification for a budget",
+      "complexity": "moderate",
+      "user_context": "authenticated_user",
+      "domain": "budgets",
+      "business_context": "AWS Budgets operation"
+    },
+    "confidence": 0.95,
+    "paths": [
+      {
+        "method": "POST",
+        "endpoint": "/#X-Amz-Target=AWSBudgetServiceGateway.CreateNotification"
+      }
+    ],
+    "requirements": {
+      "authentication": [
+        {
+          "type": "aws_signature",
+          "required": true
+        }
+      ],
+      "permissions": [
+        {
+          "level": "grey",
+          "action": "budgets:CreateNotification"
+        }
+      ]
+    }
+  },
+  {
+    "name": "CreateSubscriber",
+    "details": {
+      "summary": "Create a new subscriber for AWS Budgets",
+      "complexity": "moderate",
+      "user_context": "authenticated_user",
+      "domain": "budgets",
+      "business_context": "AWS Budgets operation"
+    },
+    "confidence": 0.95,
+    "paths": [
+      {
+        "method": "POST",
+        "endpoint": "/budgets/subscribers"
+      }
+    ],
+    "requirements": {
+      "authentication": [
+        {
+          "type": "aws_signature",
+          "required": true
+        }
+      ],
+      "permissions": [
+        {
+          "level": "write",
+          "action": "budgets:CreateSubscriber"
+        }
+      ]
+    }
+  },
+  {
+    "name": "DeleteBudget",
+    "details": {
+      "summary": "Delete a budget from AWS Budgets.",
+      "complexity": "moderate",
+      "user_context": "authenticated_user",
+      "domain": "budgets",
+      "business_context": "AWS Budgets operation"
+    },
+    "confidence": 0.95,
+    "paths": [
+      {
+        "method": "POST",
+        "endpoint": "/budgets/2023-01-01/budgets/budget-id"
+      }
+    ],
+    "requirements": {
+      "authentication": [
+        {
+          "type": "aws_signature",
+          "required": true
+        }
+      ],
+      "permissions": [
+        {
+          "level": "grey",
+          "action": "budgets:DeleteBudget"
+        }
+      ]
+    }
+  },
+  {
+    "name": "delete_budget_action",
+    "details": {
+      "summary": "Delete a budget action in AWS Budgets.",
+      "complexity": "moderate",
+      "user_context": "authenticated_user",
+      "domain": "budgets",
+      "business_context": "AWS Budgets operation"
+    },
+    "confidence": 0.95,
+    "paths": [
+      {
+        "method": "POST",
+        "endpoint": "/budgets/actions/{actionId}"
+      }
+    ],
+    "requirements": {
+      "authentication": [
+        {
+          "type": "aws_signature",
+          "required": true
+        }
+      ],
+      "permissions": [
+        {
+          "level": "write",
+          "action": "budgets:DeleteBudgetAction"
+        }
+      ]
+    }
+  },
+  {
+    "name": "DeleteNotification",
+    "details": {
+      "summary": "Deletes a notification.",
+      "complexity": "moderate",
+      "user_context": "authenticated_user",
+      "domain": "search",
+      "business_context": "AWS CloudSearch operation",
+      "description": "Deletes a notification. This operation is only supported for notifications that are in the PENDING or IN_PROGRESS state.",
+      "input_parameters": {
+        "NotificationId": {
+          "description": "The ID of the notification to delete.",
+          "type": "string",
+          "required": true
+        }
+      },
+      "output_parameters": {
+        "Status": {
+          "description": "The status of the notification after deletion.",
+          "type": "string"
+        }
+      }
+    },
+    "confidence": 0.95,
+    "paths": [
+      {
+        "method": "POST",
+        "endpoint": "/#X-Amz-Target=AWSBudgetServiceGateway.DeleteNotification"
+      }
+    ],
+    "requirements": {
+      "authentication": [
+        {
+          "type": "aws_signature",
+          "required": true
+        }
+      ],
+      "permissions": [
+        {
+          "level": "grey",
+          "action": "intent_name"
+        }
+      ]
+    }
+  },
+  {
+    "name": "DeleteSubscriber",
+    "details": {
+      "summary": "Deletes a subscriber from the budget.",
+      "complexity": "moderate",
+      "user_context": "authenticated_user",
+      "domain": "budgets",
+      "business_context": "AWS Budgets operation"
+    },
+    "confidence": 0.95,
+    "paths": [
+      {
+        "method": "POST",
+        "endpoint": "/#X-Amz-Target=AWSBudgetServiceGateway.DeleteSubscriber"
+      }
+    ],
+    "requirements": {
+      "authentication": [
+        {
+          "type": "aws_signature",
+          "required": true
+        }
+      ],
+      "permissions": [
+        {
+          "level": "grey",
+          "action": "budgets:DeleteSubscriber"
+        }
+      ]
+    }
+  },
+  {
+    "name": "describe_budget_intent",
+    "details": {
+      "summary": "Describe a budget in AWS Budgets",
+      "complexity": "moderate",
+      "user_context": "authenticated_user",
+      "domain": "budgets",
+      "business_context": "AWS Budgets operation"
+    },
+    "confidence": 0.95,
+    "paths": [
+      {
+        "method": "POST",
+        "endpoint": "/#X-Amz-Target=AWSBudgetServiceGateway.DescribeBudget"
+      }
+    ],
+    "requirements": {
+      "authentication": [
+        {
+          "type": "aws_signature",
+          "required": true
+        }
+      ],
+      "permissions": [
+        {
+          "level": "grey",
+          "action": "budgets:DescribeBudget"
+        }
+      ]
+    }
+  },
+  {
+    "name": "DescribeBudgetAction",
+    "details": {
+      "summary": "Describe a budget action in AWS Budgets.",
+      "complexity": "moderate",
+      "user_context": "authenticated_user",
+      "domain": "budgets",
+      "business_context": "AWS Budgets operation"
+    },
+    "confidence": 0.95,
+    "paths": [
+      {
+        "method": "POST",
+        "endpoint": "/budgets/#X-Amz-Target=AWSBudgetServiceGateway.DescribeBudgetAction"
+      }
+    ],
+    "requirements": {
+      "authentication": [
+        {
+          "type": "aws_signature",
+          "required": true
+        }
+      ],
+      "permissions": [
+        {
+          "level": "grey",
+          "action": "budgets:DescribeBudgetAction"
+        }
+      ]
+    }
+  },
+  {
+    "name": "describe_budget_action_histories",
+    "details": {
+      "summary": "Describe the history of actions taken on a budget.",
+      "complexity": "moderate",
+      "user_context": "authenticated_user",
+      "domain": "budgets",
+      "business_context": "AWS Budgets API"
+    },
+    "confidence": 0.95,
+    "paths": [
+      {
+        "method": "POST",
+        "endpoint": "/#X-Amz-Target=AWSBudgetServiceGateway.DescribeBudgetActionHistories"
+      }
+    ],
+    "requirements": {
+      "authentication": [
+        {
+          "type": "aws_signature",
+          "required": true
+        }
+      ],
+      "permissions": [
+        {
+          "level": "grey",
+          "action": "budgets:DescribeBudgetActionHistories"
+        }
+      ]
+    }
+  },
+  {
+    "name": "describe_budget_actions_for_account",
+    "details": {
+      "summary": "Describe budget actions for a specified account",
+      "complexity": "moderate",
+      "user_context": "authenticated_user",
+      "domain": "AWS Budgets",
+      "business_context": "AWS Budgets operation"
+    },
+    "confidence": 0.95,
+    "paths": [
+      {
+        "method": "POST",
+        "endpoint": "/#X-Amz-Target=AWSBudgetServiceGateway.DescribeBudgetActionsForAccount"
+      }
+    ],
+    "requirements": {
+      "authentication": [
+        {
+          "type": "aws_signature",
+          "required": true
+        }
+      ],
+      "permissions": [
+        {
+          "level": "grey",
+          "action": "budgets:DescribeBudgetActionsForAccount"
+        }
+      ]
+    }
+  },
+  {
+    "name": "describe_budget_performance_history",
+    "details": {
+      "summary": "Describe the performance history of a budget.",
+      "complexity": "moderate",
+      "user_context": "authenticated_user",
+      "domain": "budgets",
+      "business_context": "AWS Budgets operation"
+    },
+    "confidence": 0.95,
+    "paths": [
+      {
+        "method": "POST",
+        "endpoint": "/#X-Amz-Target=AWSBudgetServiceGateway.DescribeBudgetPerformanceHistory"
+      }
+    ],
+    "requirements": {
+      "authentication": [
+        {
+          "type": "aws_signature",
+          "required": true
+        }
+      ],
+      "permissions": [
+        {
+          "level": "grey",
+          "action": "budgets:DescribeBudgetPerformanceHistory"
+        }
+      ]
+    }
+  },
+  {
+    "name": "DescribeSubscribersForNotification",
+    "details": {
+      "summary": "Describe subscribers for a notification",
+      "complexity": "moderate",
+      "user_context": "authenticated_user",
+      "domain": "AWS Budgets",
+      "business_context": "Describe subscribers for a notification in AWS Budgets"
+    },
+    "confidence": 0.95,
+    "paths": [
+      {
+        "method": "POST",
+        "endpoint": "/#X-Amz-Target=AWSBudgetServiceGateway.DescribeSubscribersForNotification"
+      }
+    ],
+    "requirements": {
+      "authentication": [
+        {
+          "type": "aws_signature",
+          "required": true
+        }
+      ],
+      "permissions": [
+        {
+          "level": "grey",
+          "action": "budgets:DescribeSubscribersForNotification"
+        }
+      ]
+    }
+  },
+  {
+    "name": "ExecuteBudgetAction",
+    "details": {
+      "summary": "Execute a budget action, such as updating a budget or deleting a budget.",
+      "complexity": "moderate",
+      "user_context": "authenticated_user",
+      "domain": "AWS Budgets",
+      "business_context": "AWS Budgets operation"
+    },
+    "confidence": 0.95,
+    "paths": [
+      {
+        "method": "POST",
+        "endpoint": "/#X-Amz-Target=AWSBudgetServiceGateway.ExecuteBudgetAction"
+      }
+    ],
+    "requirements": {
+      "authentication": [
+        {
+          "type": "aws_signature",
+          "required": true
+        }
+      ],
+      "permissions": [
+        {
+          "level": "grey",
+          "action": "budgets:ExecuteBudgetAction"
+        }
+      ]
+    }
+  },
+  {
+    "name": "UpdateBudgetAction",
+    "details": {
+      "summary": "Updates the budget action for a specified budget.",
+      "complexity": "moderate",
+      "user_context": "authenticated_user",
+      "domain": "budgets",
+      "business_context": "AWS Budgets operation"
+    },
+    "confidence": 0.95,
+    "paths": [
+      {
+        "method": "POST",
+        "endpoint": "/#X-Amz-Target=AWSBudgetServiceGateway.UpdateBudgetAction"
+      }
+    ],
+    "requirements": {
+      "authentication": [
+        {
+          "type": "aws_signature",
+          "required": true
+        }
+      ],
+      "permissions": [
+        {
+          "level": "grey",
+          "action": "budgets:UpdateBudgetAction"
+        }
+      ]
+    }
+  }
+]

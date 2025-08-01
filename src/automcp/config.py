@@ -11,6 +11,16 @@ from typing import Dict, Any, Optional
 from dataclasses import dataclass
 import copy
 
+# Load .env file if it exists
+try:
+    from dotenv import load_dotenv
+    # Try to load .env from current working directory and project root
+    project_root = Path(__file__).parent.parent.parent
+    load_dotenv(project_root / '.env')
+    load_dotenv('.env')  # Also try current directory
+except ImportError:
+    pass  # python-dotenv not installed
+
 @dataclass
 class Config:
     """Configuration object with environment-aware settings"""

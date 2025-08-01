@@ -1,0 +1,114 @@
+[
+  {
+    "name": "CreateBudget",
+    "description": "AWS CloudSearch CreateBudget operation",
+    "method": "POST",
+    "path": "/#X-Amz-Target=AWSBudgetServiceGateway.CreateBudget",
+    "safety_level": "moderate",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "X-Amz-Target": {
+          "type": "string",
+          "description": "API parameter X-Amz-Target"
+        }
+      },
+      "required": [
+        "X-Amz-Target"
+      ]
+    },
+    "metadata": {
+      "complexity": "moderate",
+      "confidence": 0.95,
+      "parameter_count": 9,
+      "aws_service": "cloudsearch",
+      "actual_parameters": 1
+    }
+  },
+  {
+    "name": "CreateBudgetAction",
+    "description": "AWS CloudSearch CreateBudgetAction operation",
+    "method": "POST",
+    "path": "/#X-Amz-Target=AWSBudgetServiceGateway.CreateBudgetAction",
+    "safety_level": "moderate",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "X-Amz-Target": {
+          "type": "string",
+          "description": "API parameter X-Amz-Target"
+        }
+      },
+      "required": [
+        "X-Amz-Target"
+      ]
+    },
+    "metadata": {
+      "complexity": "moderate",
+      "confidence": 0.95,
+      "parameter_count": 1,
+      "aws_service": "cloudsearch",
+      "actual_parameters": 1
+    }
+  },
+  {
+    "name": "DeleteBudget",
+    "description": "AWS CloudSearch DeleteBudget operation",
+    "method": "POST",
+    "path": "/#X-Amz-Target=AWSBudgetServiceGateway.DeleteBudget",
+    "safety_level": "moderate",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "X-Amz-Target": {
+          "type": "string",
+          "description": "API parameter X-Amz-Target"
+        }
+      },
+      "required": [
+        "X-Amz-Target"
+      ]
+    },
+    "metadata": {
+      "complexity": "moderate",
+      "confidence": 0.95,
+      "parameter_count": 2,
+      "aws_service": "cloudsearch",
+      "actual_parameters": 1
+    }
+  },
+  {
+    "name": "DescribeBudgetActionsForBudget",
+    "description": "AWS CloudSearch DescribeBudgetActionsForBudget operation",
+    "method": "POST",
+    "path": "/#X-Amz-Target=AWSBudgetServiceGateway.DescribeBudgetActionsForBudget",
+    "safety_level": "moderate",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "MaxResults": {
+          "type": "string",
+          "description": "Pagination limit"
+        },
+        "NextToken": {
+          "type": "string",
+          "description": "Pagination token"
+        },
+        "X-Amz-Target": {
+          "type": "string",
+          "description": "API parameter X-Amz-Target"
+        }
+      },
+      "required": [
+        "X-Amz-Target"
+      ]
+    },
+    "metadata": {
+      "complexity": "moderate",
+      "confidence": 0.95,
+      "parameter_count": 3,
+      "aws_service": "cloudsearch",
+      "actual_parameters": 3
+    }
+  }
+]
