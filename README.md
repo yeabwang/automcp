@@ -1,4 +1,4 @@
-# 🚀 AutoMCP - Intelligent API to MCP Tool Converter
+# AutoMCP - Intelligent API to MCP Tool Converter
 
 **Transform API specifications into intelligent Model Context Protocol (MCP) tools with AI-powered semantic enrichment.**
 
@@ -97,6 +97,4 @@ automcp -e enterprise analyze api.yaml
 
 
 
-**Made with ❤️ 
-
-[Report Bug](https://github.com/yeabwang/AutoMCP/issues) • [Request Feature](https://github.com/yeabwang/AutoMCP/issues) • [Discord Community](https://discord.gg/automcp)
+Made with ❤️ 
